@@ -1,0 +1,8 @@
+# Screen
+WIDTH = 800
+HEIGHT = 800
+
+# Board
+COLS = 8
+ROWS = 8
+SQUARE_SIZE = WIDTH // COLS
