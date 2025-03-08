@@ -1,76 +1,124 @@
 import pygame
 
-from const import*
+from const import *
 from board import Board
 from dragger import Dragger
+from config import Config
+from square import Square
 
 class Game:
-    
+
     def __init__(self):
-        self.next_player = "white"
+        self.next_player = 'white'
         self.hovered_sqr = None
         self.board = Board()
         self.dragger = Dragger()
+        self.config = Config()
 
-    def show_background(self, surface):
+    # blit methods
+
+    def show_bg(self, surface):
+        theme = self.config.theme
+        
         for row in range(ROWS):
             for col in range(COLS):
-                if (row + col) % 2 == 0:
-                    color = (234, 235, 200)
-                else:
-                    color = (119, 154, 88)
-                    
-                # vị trí góc trên của ô, chiều cao, chiều rộng ô
+                # color
+                color = theme.bg.light if (row + col) % 2 == 0 else theme.bg.dark
+                # rect
                 rect = (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
-                
-                # vẽ ô lên màn hình
+                # blit
                 pygame.draw.rect(surface, color, rect)
-                
+
+                # row coordinates
+                if col == 0:
+                    # color
+                    color = theme.bg.dark if row % 2 == 0 else theme.bg.light
+                    # label
+                    lbl = self.config.font.render(str(ROWS-row), 1, color)
+                    lbl_pos = (5, 5 + row * SQUARE_SIZE)
+                    # blit
+                    surface.blit(lbl, lbl_pos)
+
+                # col coordinates
+                if row == 7:
+                    # color
+                    color = theme.bg.dark if (row + col) % 2 == 0 else theme.bg.light
+                    # label
+                    lbl = self.config.font.render(Square.get_alphacol(col), 1, color)
+                    lbl_pos = (col * SQUARE_SIZE + SQUARE_SIZE - 20, HEIGHT - 20)
+                    # blit
+                    surface.blit(lbl, lbl_pos)
+
     def show_pieces(self, surface):
         for row in range(ROWS):
             for col in range(COLS):
-                if self.board.squares[row][col] is not None and self.board.squares[row][col].has_piece():
+                # piece ?
+                if self.board.squares[row][col].has_piece():
                     piece = self.board.squares[row][col].piece
                     
+                    # all pieces except dragger piece
                     if piece is not self.dragger.piece:
-                        # trả về kích thước ban đầu
                         piece.set_texture(size=80)
-                        # tải ảnh của quân cờ từ đường dẫn
                         img = pygame.image.load(piece.texture)
-                        # tính toán vị trí trung tâm mà quân cờ được đặt
                         img_center = col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2
-                        # lấy hình chữ nhật bao quanh ảnh và căn chỉnh hình chữ nhật tại trung tâm
                         piece.texture_rect = img.get_rect(center=img_center)
-                        # vẽ ảnh của quân cờ lên bề mặt tại vị trí piece.texture_rect
                         surface.blit(img, piece.texture_rect)
-                        
+
     def show_moves(self, surface):
+        theme = self.config.theme
+
         if self.dragger.dragging:
             piece = self.dragger.piece
-            
+
+            # loop all valid moves
             for move in piece.moves:
-                color = '#C86464' if (move.final.row + move.final.col) % 2 == 0 else "#C84646"
+                # color
+                color = theme.moves.light if (move.final.row + move.final.col) % 2 == 0 else theme.moves.dark
+                # rect
                 rect = (move.final.col * SQUARE_SIZE, move.final.row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+                # blit
                 pygame.draw.rect(surface, color, rect)
-                
+
     def show_last_move(self, surface):
+        theme = self.config.theme
+
         if self.board.last_move:
             initial = self.board.last_move.initial
             final = self.board.last_move.final
-            
+
             for pos in [initial, final]:
-                color = (244, 247, 116) if (pos.row + pos.col) % 2 == 0 else (172, 195, 51)
+                # color
+                color = theme.trace.light if (pos.row + pos.col) % 2 == 0 else theme.trace.dark
+                # rect
                 rect = (pos.col * SQUARE_SIZE, pos.row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+                # blit
                 pygame.draw.rect(surface, color, rect)
-                
+
     def show_hover(self, surface):
         if self.hovered_sqr:
+            # color
             color = (180, 180, 180)
+            # rect
             rect = (self.hovered_sqr.col * SQUARE_SIZE, self.hovered_sqr.row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+            # blit
             pygame.draw.rect(surface, color, rect, width=3)
-                
+
+    # other methods
+
     def next_turn(self):
-        self.next_player = "white" if self.next_player == "black" else "black"
-        
+        self.next_player = 'white' if self.next_player == 'black' else 'black'
+
     def set_hover(self, row, col):
         self.hovered_sqr = self.board.squares[row][col]
+
+    def change_theme(self):
+        self.config.change_theme()
+
+    def play_sound(self, captured=False):
+        if captured:
+            self.config.capture_sound.play()
+        else:
+            self.config.move_sound.play()
+
+    def reset(self):
+        self.__init__()
