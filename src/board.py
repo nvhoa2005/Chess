@@ -152,6 +152,38 @@ class Board:
                         piece.add_move(move)
                         
             # castling moves
+            
+            def check_castling_left():
+                if self.squares[row][0].piece.moved: return False
+                for i in range(1, col):
+                    if(self.squares[row][i].has_piece()):
+                        return False
+                return True
+            
+            def check_castling_right():
+                if self.squares[row][7].piece.moved: return False
+                for i in range(col+1, 7):
+                    if(self.squares[row][i].has_piece()):
+                        return False
+                return True
+            
+            if piece.moved == False:
+                if check_castling_left():
+                    # create squares of the new move
+                    initial = Square(row, col)
+                    final = Square(row, col-2)
+                    # create new move
+                    move = Move(initial, final)
+                    # append new valid move
+                    piece.add_move(move)
+                if check_castling_right():
+                    # create squares of the new move
+                    initial = Square(row, col)
+                    final = Square(row, col+2)
+                    # create new move
+                    move = Move(initial, final)
+                    # append new valid move
+                    piece.add_move(move)
         
         if isinstance(piece, Pawn):
             pawn_moves()

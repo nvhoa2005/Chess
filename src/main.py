@@ -55,11 +55,11 @@ class Main:
                             board.calc_moves(piece, clicked_row, clicked_col)
                             dragger.save_initial(event.pos)
                             dragger.drag_piece(piece)
-                            
-                            game.show_background(screen)
-                            game.show_last_move(screen)
-                            game.show_moves(screen)
-                            game.show_pieces(screen)
+                        
+                        game.show_background(screen)
+                        game.show_last_move(screen)
+                        game.show_moves(screen)
+                        game.show_pieces(screen)
                 
                 # mouse motion
                 elif event.type == pygame.MOUSEMOTION:
@@ -89,8 +89,20 @@ class Main:
                         initial = Square(dragger.initial_row, dragger.initial_col)
                         final = Square(released_row, released_col)
                         move = Move(initial, final)
+                                
                         
                         if board.valid_move(dragger.piece, move):
+                            if dragger.piece.name == "king":
+                                if released_row == dragger.initial_row and (released_col - dragger.initial_col == 2) and board.squares[released_row][7].piece.moved == False:
+                                    initial2 = Square(dragger.initial_row, 7)
+                                    final2 = Square(released_row, 5)
+                                    move2 = Move(initial2, final2)
+                                    board.move(board.squares[released_row][7].piece, move2)
+                                elif released_row == dragger.initial_row and (dragger.initial_col - released_col == 2) and board.squares[released_row][0].piece.moved == False:
+                                    initial2 = Square(dragger.initial_row, 0)
+                                    final2 = Square(released_row, 3)
+                                    move2 = Move(initial2, final2)
+                                    board.move(board.squares[released_row][0].piece, move2)
                             board.move(dragger.piece, move)
                             # show methods
                             game.show_background(screen)
