@@ -12,10 +12,18 @@ class Config:
         self.idx = 0
         self.theme = self.themes[self.idx]
         self.font = pygame.font.SysFont('monospace', 18, bold=True)
+        self.paused_font = pygame.font.SysFont('monospace', 50, bold=True)
+        self.continue_font = pygame.font.SysFont('monospace', 50, bold=True)
+        self.restart_font = pygame.font.SysFont('monospace', 50, bold=True)
+        self.exit_font = pygame.font.SysFont('monospace', 50, bold=True)
         self.move_sound = Sound(
             os.path.join('assets/sounds/move.wav'))
         self.capture_sound = Sound(
             os.path.join('assets/sounds/capture.wav'))
+        self.click_sound = Sound(
+            os.path.join('assets/sounds/click.wav'))
+        self.hover_sound = Sound(
+            os.path.join('assets/sounds/hover.wav'))
 
     def change_theme(self):
         self.idx += 1

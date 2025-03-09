@@ -6,3 +6,7 @@ HEIGHT = 800
 COLS = 8
 ROWS = 8
 SQUARE_SIZE = WIDTH // COLS
+
+# color
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)

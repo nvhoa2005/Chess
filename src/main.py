@@ -21,7 +21,7 @@ class Main:
         board = self.game.board
         dragger = self.game.dragger
 
-        while True:
+        while game.running:
             # show methods
             game.show_bg(screen)
             game.show_last_move(screen)
@@ -29,6 +29,65 @@ class Main:
             game.show_pieces(screen)
             game.show_hover(screen)
 
+            while game.paused:
+                # Hiển thị chữ "PAUSE"
+                pause_font = pygame.font.Font(None, 120)  # Font to hơn
+                pause_text = pause_font.render("PAUSED", True, (200, 200, 200))
+                pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
+                screen.blit(pause_text, pause_rect)
+
+                # Vẽ khung nền lớn hơn
+                box_width, box_height = 400, 350  # Kích thước khung lớn hơn
+                box_rect = pygame.Rect(WIDTH // 2 - box_width // 2, HEIGHT // 2 - 150, box_width, box_height)
+                pygame.draw.rect(screen, (50, 50, 50), box_rect, border_radius=25)  # Viền bo mềm
+                pygame.draw.rect(screen, (255, 255, 255), box_rect, 5, border_radius=25)  # Viền trắng dày hơn
+
+                # Lấy vị trí chuột
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                # Các nút menu
+                options = [("Continue", -60), ("Restart", 40), ("Quit", 140)]
+                button_rects = {}
+
+                for text, y_offset in options:
+                    is_hovered = False
+                    button_rect = game.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, game.config.continue_font, is_hovered)
+                    if button_rect.collidepoint(mouse_x, mouse_y):
+                        if game.last_hover_button != text: 
+                            game.play_sound("hover")
+                            game.last_hover_button = text
+                        button_rect = game.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, game.config.continue_font, hover=True)
+                    else: 
+                        if game.last_hover_button == text: 
+                            game.last_hover_button = None
+                    button_rects[text] = button_rect
+
+                pygame.display.update()  # Cập nhật màn hình
+
+                # Xử lý sự kiện
+                for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        game.play_sound("click")
+                        for text, button_rect in button_rects.items():
+                            if button_rect.collidepoint(event.pos):
+                                if text == "Continue":
+                                    game.paused = False
+                                elif text == "Restart":
+                                    game.reset()
+                                    game = self.game
+                                    board = self.game.board
+                                    dragger = self.game.dragger
+                                elif text == "Quit":
+                                    game.running = False
+                                    pygame.quit()
+                                    sys.exit()
+                    elif event.type == pygame.QUIT:
+                        game.running = False
+                        pygame.quit()
+                        sys.exit()
+
+
+            
             if dragger.dragging:
                 dragger.update_blit(screen)
 
@@ -36,24 +95,25 @@ class Main:
 
                 # click
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    dragger.update_mouse(event.pos)
+                    if not game.paused:
+                        dragger.update_mouse(event.pos)
 
-                    clicked_row = dragger.mouseY // SQUARE_SIZE
-                    clicked_col = dragger.mouseX // SQUARE_SIZE
+                        clicked_row = dragger.mouseY // SQUARE_SIZE
+                        clicked_col = dragger.mouseX // SQUARE_SIZE
 
-                    # if clicked square has a piece ?
-                    if board.squares[clicked_row][clicked_col].has_piece():
-                        piece = board.squares[clicked_row][clicked_col].piece
-                        # valid piece (color) ?
-                        if piece.color == game.next_player:
-                            board.calc_moves(piece, clicked_row, clicked_col, bool=True)
-                            dragger.save_initial(event.pos)
-                            dragger.drag_piece(piece)
-                            # show methods 
-                            game.show_bg(screen)
-                            game.show_last_move(screen)
-                            game.show_moves(screen)
-                            game.show_pieces(screen)
+                        # if clicked square has a piece ?
+                        if board.squares[clicked_row][clicked_col].has_piece():
+                            piece = board.squares[clicked_row][clicked_col].piece
+                            # valid piece (color) ?
+                            if piece.color == game.next_player:
+                                board.calc_moves(piece, clicked_row, clicked_col, bool=True)
+                                dragger.save_initial(event.pos)
+                                dragger.drag_piece(piece)
+                                # show methods 
+                                game.show_bg(screen)
+                                game.show_last_move(screen)
+                                game.show_moves(screen)
+                                game.show_pieces(screen)
                 
                 # mouse motion
                 elif event.type == pygame.MOUSEMOTION:
@@ -95,7 +155,8 @@ class Main:
                             board.set_true_en_passant(dragger.piece)                            
 
                             # sounds
-                            game.play_sound(captured)
+                            check_sound = "capture" if captured else "move"
+                            game.play_sound(check_sound)
                             # show methods
                             game.show_bg(screen)
                             game.show_last_move(screen)
@@ -118,9 +179,14 @@ class Main:
                         game = self.game
                         board = self.game.board
                         dragger = self.game.dragger
+                        
+                    # paused
+                    if event.key == pygame.K_ESCAPE:
+                        game.paused = not game.paused
 
                 # quit application
                 elif event.type == pygame.QUIT:
+                    game.running = False
                     pygame.quit()
                     sys.exit()
             

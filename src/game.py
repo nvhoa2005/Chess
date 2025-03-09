@@ -14,6 +14,10 @@ class Game:
         self.board = Board()
         self.dragger = Dragger()
         self.config = Config()
+        self.paused = False
+        self.running = True
+        # theo dõi nút đang được hover
+        self.last_hover_button = None
 
     # blit methods
 
@@ -114,11 +118,32 @@ class Game:
     def change_theme(self):
         self.config.change_theme()
 
-    def play_sound(self, captured=False):
-        if captured:
+    def play_sound(self, event_type):
+        if event_type == "capture":
             self.config.capture_sound.play()
-        else:
+        elif event_type == "move":
             self.config.move_sound.play()
+        elif event_type == "click":
+            self.config.click_sound.play()
+        elif event_type == "hover":
+            self.config.hover_sound.play()
 
     def reset(self):
         self.__init__()
+        
+    # Vẽ button
+    def draw_button(self, screen, text, position, width, height, font, hover=False):
+        # vị trí button
+        rect = pygame.Rect(position[0] - width // 2, position[1] - height // 2, width, height)
+        
+        # Khi hover
+        bg_color = (200, 200, 200) if hover else (120, 120, 120)
+        pygame.draw.rect(screen, bg_color, rect, border_radius=20)  
+        pygame.draw.rect(screen, WHITE, rect, 5, border_radius=20) 
+
+        # Render chữ
+        text_surface = font.render(text, True, BLACK if hover else WHITE)
+        text_rect = text_surface.get_rect(center=position)
+        screen.blit(text_surface, text_rect)
+        
+        return rect
