@@ -3,6 +3,7 @@ import os
 
 from sound import Sound
 from theme import Theme
+from video import Video
 
 class Config:
 
@@ -12,10 +13,13 @@ class Config:
         self.idx = 0
         self.theme = self.themes[self.idx]
         self.font = pygame.font.SysFont('monospace', 18, bold=True)
-        self.paused_font = pygame.font.SysFont('monospace', 50, bold=True)
-        self.continue_font = pygame.font.SysFont('monospace', 50, bold=True)
-        self.restart_font = pygame.font.SysFont('monospace', 50, bold=True)
-        self.exit_font = pygame.font.SysFont('monospace', 50, bold=True)
+        self.paused_font = pygame.font.SysFont('monospace', 120, bold=True)
+        self.paused_options_font = pygame.font.SysFont('monospace', 50, bold=True)
+        self.start_menu_font = pygame.font.SysFont('monospace', 50, bold=True)
+        # video
+        self.background_video = Video(
+            os.path.join('assets/videos/background_video.mp4'))
+        # sound
         self.move_sound = Sound(
             os.path.join('assets/sounds/move.wav'))
         self.capture_sound = Sound(
@@ -24,6 +28,9 @@ class Config:
             os.path.join('assets/sounds/click.wav'))
         self.hover_sound = Sound(
             os.path.join('assets/sounds/hover.wav'))
+        self.background_sound = Sound(
+            os.path.join('assets/sounds/background_sound.wav')
+        )
 
     def change_theme(self):
         self.idx += 1

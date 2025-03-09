@@ -1,0 +1,25 @@
+# Bỏ qua thư mục môi trường ảo Python
+venv/
+Venv/
+ENV/
+env/
+
+# Bỏ qua file OpenCV lớn
+venv/Lib/site-packages/cv2/cv2.pyd
+venv/lib/python*/site-packages/cv2/cv2.pyd
+
+# Bỏ qua tất cả file video lớn
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# Bỏ qua cache và file tạm thời
+__pycache__/
+*.log
+*.tmp
+*.swp
+
+# Bỏ qua file của hệ điều hành
+.DS_Store
+Thumbs.db

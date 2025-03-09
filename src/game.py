@@ -16,6 +16,8 @@ class Game:
         self.config = Config()
         self.paused = False
         self.running = True
+        self.menu = True
+        self.sound = True
         # theo dõi nút đang được hover
         self.last_hover_button = None
 
@@ -106,6 +108,17 @@ class Game:
             rect = (self.hovered_sqr.col * SQUARE_SIZE, self.hovered_sqr.row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
             # blit
             pygame.draw.rect(surface, color, rect, width=3)
+            
+    def show_sound(self, surface, status=True):
+        if status:
+            sound_on_img = pygame.image.load("assets/images/img/sound_on.png")
+            sound_icon_rect = sound_on_img.get_rect(topright=(WIDTH-10, 20))
+            surface.blit(sound_on_img, sound_icon_rect)
+        else:
+            sound_off_img = pygame.image.load("assets/images/img/sound_off.png")
+            sound_icon_rect = sound_off_img.get_rect(topright=(WIDTH-10, 20))
+            surface.blit(sound_off_img, sound_icon_rect)
+            
 
     # other methods
 
@@ -127,6 +140,18 @@ class Game:
             self.config.click_sound.play()
         elif event_type == "hover":
             self.config.hover_sound.play()
+            
+    def play_background_sound(self):
+        self.config.background_sound.load()
+            
+    def pause_sound(self):
+        self.config.background_sound.pause()
+        
+    def unpause_sound(self):
+        self.config.background_sound.unpause()
+            
+    def play_video(self, screen):
+        self.config.background_video.play(screen)
 
     def reset(self):
         self.__init__()
@@ -147,3 +172,13 @@ class Game:
         screen.blit(text_surface, text_rect)
         
         return rect
+    
+    # vẽ hình chữ nhật có độ trong suốt lên một surface khác
+    def draw_transparent_rect(self, screen, color, rect, opacity, border_radius):
+        # Tạo một Surface mới với cùng cỡ hình chữ nhật
+        transparent_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        # Vẽ hình chữ nhật bo góc lên Surface
+        pygame.draw.rect(transparent_surface, (*color, opacity), 
+                        (0, 0, rect.width, rect.height), border_radius=border_radius)
+        # Vẽ Surface lên màn hình chính
+        screen.blit(transparent_surface, (rect.x, rect.y))

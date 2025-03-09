@@ -20,8 +20,81 @@ class Main:
         game = self.game
         board = self.game.board
         dragger = self.game.dragger
+        
+        game.play_background_sound()
+        # show menu
+        while game.menu:
+            game.play_video(screen)
+            # if game.sound:
+            #     game.show_sound(screen, game.sound)
+            #     game.unpause_sound()
+            # else:
+            #     game.show_sound(screen, game.sound)
+            #     game.pause_sound()
+            sound_rect = pygame.Rect(680, 10, 120, 110)
+            
+            # Vẽ khung nền cho text 
+            box_width, box_height = 400, 350 
+            box_rect = pygame.Rect(WIDTH // 2 - box_width // 2, HEIGHT // 2 - 150, box_width, box_height)
+            game.draw_transparent_rect(screen, (50, 50, 50), box_rect, 180, border_radius=25) 
+            pygame.draw.rect(screen, WHITE, box_rect, 5, border_radius=25)  
+
+            # Hiển thị text
+            title_text = game.config.start_menu_font.render("Select Mode", True, WHITE)
+            title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
+            screen.blit(title_text, title_rect)
+
+            # Lấy vị trí chuột
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+
+            # Tạo danh sách các nút chọn chế độ chơi
+            button_rects = {}
+            
+            # Danh sách các tùy chọn chế độ chơi
+            options = [("PVP", -60), ("AI", 40), ("Quit", 140)]
+
+            for text, y_offset in options:
+                is_hovered = False
+                button_rect = game.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, game.config.start_menu_font, is_hovered)
+
+                if button_rect.collidepoint(mouse_x, mouse_y):
+                    if game.last_hover_button != text:  
+                        if game.sound: game.play_sound("hover")
+                        game.last_hover_button = text
+                
+                    button_rect = game.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, game.config.start_menu_font, hover=True)
+                elif game.last_hover_button == text: 
+                    game.last_hover_button = None
+
+                button_rects[text] = button_rect
+
+            pygame.display.update()
+
+            # Xử lý sự kiện
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if game.sound: game.play_sound("click")
+                    for text, button_rect in button_rects.items():
+                        print(event.pos)
+                        if button_rect.collidepoint(event.pos):
+                            if text == "Player vs Player":
+                                selected_mode = "pvp"
+                            elif text == "Player vs AI":
+                                selected_mode = "ai"
+                            elif text == "Quit":
+                                pygame.quit()
+                                sys.exit()
+                            game.menu = False  
+                    if sound_rect.collidepoint(event.pos):
+                        if game.sound: game.sound = False
+                        else: game.sound = True
 
         while game.running:
+            if game.sound: game.pause_sound()
             # show methods
             game.show_bg(screen)
             game.show_last_move(screen)
@@ -30,17 +103,22 @@ class Main:
             game.show_hover(screen)
 
             while game.paused:
+                # if game.sound:
+                #     game.show_sound(screen, game.sound)
+                #     game.unpause_sound()
+                # else:
+                #     game.show_sound(screen, game.sound)
+                #     game.pause_sound()
                 # Hiển thị chữ "PAUSE"
-                pause_font = pygame.font.Font(None, 120)  # Font to hơn
-                pause_text = pause_font.render("PAUSED", True, (200, 200, 200))
+                pause_text = game.config.paused_font.render("PAUSED", True, (200, 200, 200))
                 pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
                 screen.blit(pause_text, pause_rect)
 
-                # Vẽ khung nền lớn hơn
-                box_width, box_height = 400, 350  # Kích thước khung lớn hơn
+                # Vẽ khung nền cho text 
+                box_width, box_height = 400, 350 
                 box_rect = pygame.Rect(WIDTH // 2 - box_width // 2, HEIGHT // 2 - 150, box_width, box_height)
-                pygame.draw.rect(screen, (50, 50, 50), box_rect, border_radius=25)  # Viền bo mềm
-                pygame.draw.rect(screen, (255, 255, 255), box_rect, 5, border_radius=25)  # Viền trắng dày hơn
+                pygame.draw.rect(screen, (50, 50, 50), box_rect, border_radius=25) 
+                pygame.draw.rect(screen, (255, 255, 255), box_rect, 5, border_radius=25)  
 
                 # Lấy vị trí chuột
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -50,13 +128,12 @@ class Main:
                 button_rects = {}
 
                 for text, y_offset in options:
-                    is_hovered = False
-                    button_rect = game.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, game.config.continue_font, is_hovered)
+                    button_rect = game.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, game.config.paused_options_font, False)
                     if button_rect.collidepoint(mouse_x, mouse_y):
                         if game.last_hover_button != text: 
-                            game.play_sound("hover")
+                            if game.sound: game.play_sound("hover")
                             game.last_hover_button = text
-                        button_rect = game.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, game.config.continue_font, hover=True)
+                        button_rect = game.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, game.config.paused_options_font, True)
                     else: 
                         if game.last_hover_button == text: 
                             game.last_hover_button = None
@@ -67,7 +144,7 @@ class Main:
                 # Xử lý sự kiện
                 for event in pygame.event.get():
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        game.play_sound("click")
+                        if game.sound: game.play_sound("click")
                         for text, button_rect in button_rects.items():
                             if button_rect.collidepoint(event.pos):
                                 if text == "Continue":
@@ -81,6 +158,9 @@ class Main:
                                     game.running = False
                                     pygame.quit()
                                     sys.exit()
+                        if sound_rect.collidepoint(event.pos):
+                            if game.sound: game.sound = False
+                            else: game.sound = True
                     elif event.type == pygame.QUIT:
                         game.running = False
                         pygame.quit()
@@ -156,7 +236,7 @@ class Main:
 
                             # sounds
                             check_sound = "capture" if captured else "move"
-                            game.play_sound(check_sound)
+                            if game.sound: game.play_sound(check_sound)
                             # show methods
                             game.show_bg(screen)
                             game.show_last_move(screen)
