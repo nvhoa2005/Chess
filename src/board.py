@@ -15,6 +15,7 @@ class Board:
         self._add_pieces('white')
         self._add_pieces('black')
 
+
     def move(self, piece, move, testing=False):
         initial = move.initial
         final = move.final
@@ -454,3 +455,42 @@ class Board:
 
         # king
         self.squares[row_other][4] = Square(row_other, 4, King(color))
+        
+        
+    # ============================AI==============================
+        
+        
+    def undo_move(self, move):
+        if move is None:
+            return  # Không có nước đi nào để hoàn tác
+
+        initial = move.initial
+        final = move.final
+        moved_piece = self.squares[final.row][final.col].piece
+
+        # Khôi phục quân cờ về vị trí ban đầu
+        self.squares[initial.row][initial.col].piece = moved_piece
+        self.squares[final.row][final.col].piece = move.captured_piece  # Khôi phục quân cờ bị ăn (nếu có)
+
+        # Hoàn tác phong cấp tốt (nếu có)
+        if move.promoted_from is not None:
+            self.squares[initial.row][initial.col].piece = move.promoted_from  # Trả lại tốt ban đầu
+
+        # Hoàn tác bắt tốt qua đường (En passant)
+        if isinstance(moved_piece, Pawn) and final.col != initial.col and move.captured_piece is None:
+            captured_pawn = Pawn("white" if moved_piece.color == "black" else "black")
+            self.squares[initial.row][final.col].piece = captured_pawn  # Trả lại tốt bị bắt
+
+        # Hoàn tác nhập thành (castling)
+        if isinstance(moved_piece, King) and abs(final.col - initial.col) == 2:
+            if final.col > initial.col:  # Nhập thành cánh vua
+                rook_initial_col, rook_final_col = 7, 5
+            else:  # Nhập thành cánh hậu
+                rook_initial_col, rook_final_col = 0, 3
+            
+            rook = self.squares[initial.row][rook_final_col].piece
+            self.squares[initial.row][rook_initial_col].piece = rook  # Đưa xe về vị trí ban đầu
+            self.squares[initial.row][rook_final_col].piece = None  # Xóa xe khỏi vị trí mới
+
+        # Hoàn tác trạng thái di chuyển của quân cờ
+        moved_piece.moved = False

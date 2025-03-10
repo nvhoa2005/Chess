@@ -4,6 +4,7 @@ import os
 from sound import Sound
 from theme import Theme
 from video import Video
+from const import *
 
 class Config:
 
