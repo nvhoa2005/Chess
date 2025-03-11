@@ -207,7 +207,7 @@ class Game:
             self.show_hover(screen)
 
             if self.paused:
-                self.display_paused_game(screen)
+                self.display_paused_game(screen, PAUSED_GAME)
             
             if self.dragger.dragging:
                 self.dragger.update_blit(screen)
@@ -282,6 +282,11 @@ class Game:
                             self.show_bg(screen)
                             self.show_last_move(screen)
                             self.show_pieces(screen)
+                            # check is_checkmate
+                            if self.is_checkmate():
+                                winner = WHITE_WIN if self.next_player == "white" else BLACK_WIN
+                                self.paused = True
+                                self.display_paused_game(screen, winner)
                             # next turn
                             self.next_turn()
                     
@@ -428,7 +433,7 @@ class Game:
             
             pygame.display.update()
 
-    def display_paused_game(self, screen):
+    def display_paused_game(self, screen, type=PAUSED_GAME):
         while self.paused:
             # if self.sound:
             #     self.show_sound(screen, self.sound)
@@ -437,10 +442,21 @@ class Game:
             #     self.show_sound(screen, self.sound)
             #     self.pause_sound()
             
-            # Hiển thị chữ "PAUSE"
-            pause_text = self.config.paused_font.render("PAUSED", True, (200, 200, 200))
-            pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
-            screen.blit(pause_text, pause_rect)
+            if type == PAUSED_GAME:
+                # Hiển thị chữ "PAUSE"
+                pause_text = self.config.paused_font.render("PAUSED", True, (200, 200, 200))
+                pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
+                screen.blit(pause_text, pause_rect)
+            elif type == WHITE_WIN:
+                # Hiển thị chữ "WHITE WIN"
+                pause_text = self.config.paused_font.render("WHITE WIN", True, WHITE)
+                pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
+                screen.blit(pause_text, pause_rect)
+            elif type == BLACK_WIN:
+                # Hiển thị chữ "BLACK WIN"
+                pause_text = self.config.paused_font.render("BLACK WIN", True, BLACK)
+                pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
+                screen.blit(pause_text, pause_rect)
 
             # Vẽ khung nền cho text 
             box_width, box_height = 400, 350 
@@ -456,7 +472,13 @@ class Game:
             button_rects = {}
 
             for text, y_offset in options:
-                button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.paused_options_font, False)
+                if type == PAUSED_GAME:
+                    button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.paused_options_font, False)
+                else:
+                    if text == "Continue":
+                        button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.paused_options_font, False, BLACK_WIN)
+                    else:
+                        button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.paused_options_font, False)
                 if button_rect.collidepoint(mouse_x, mouse_y):
                     if self.last_hover_button != text: 
                         if self.sound: self.play_sound("hover")
@@ -476,7 +498,8 @@ class Game:
                     for text, button_rect in button_rects.items():
                         if button_rect.collidepoint(event.pos):
                             if text == "Continue":
-                                self.paused = False
+                                if type == PAUSED_GAME:
+                                    self.paused = False
                             elif text == "Restart":
                                 self.reset()
                             elif text == "Quit":
@@ -528,12 +551,15 @@ class Game:
         self.__init__()
         
     # Vẽ button
-    def draw_button(self, screen, text, position, width, height, font, hover=False):
+    def draw_button(self, screen, text, position, width, height, font, hover=False, type=PAUSED_GAME):
         # vị trí button
         rect = pygame.Rect(position[0] - width // 2, position[1] - height // 2, width, height)
         
         # Khi hover
-        bg_color = (200, 200, 200) if hover else (120, 120, 120)
+        if type == PAUSED_GAME:
+            bg_color = (200, 200, 200) if hover else (120, 120, 120)
+        else:
+            bg_color = (80, 80, 80) if hover else (50, 50, 50)
         pygame.draw.rect(screen, bg_color, rect, border_radius=20)  
         pygame.draw.rect(screen, WHITE, rect, 5, border_radius=20) 
 
@@ -621,3 +647,14 @@ class Game:
                 print("AI không thể di chuyển, ván cờ kết thúc.")
 
             self.running = False  # Dừng game
+         
+    # chiếu hết
+    def is_checkmate(self):
+        for row in range(ROWS):
+            for col in range(COLS):
+                if self.board.squares[row][col].has_enemy_piece(self.next_player):
+                    piece = self.board.squares[row][col].piece
+                    self.board.calc_moves(piece, row, col)
+                    if len(piece.moves) != 0:
+                        return False
+        return True
