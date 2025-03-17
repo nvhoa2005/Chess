@@ -179,10 +179,8 @@ class Game:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.sound: self.play_sound("click")
                     for text, button_rect in button_rects.items():
-                        print(event.pos)
                         if button_rect.collidepoint(event.pos):
                             if text == "PVP":
-                                print(text)
                                 return PVP
                             elif text == "AI":
                                 return AI
@@ -227,7 +225,32 @@ class Game:
                             piece = self.board.squares[clicked_row][clicked_col].piece
                             # valid piece (color) ?
                             if piece.color == self.next_player:
+                                
+                                # print("|| các nước đi được")
+                                # for move in piece.moves:
+                                #     init = move.initial
+                                #     fi = move.final
+                                #     print(init.row, init.col, "----", fi.row, fi.col)
+                                # print("các nước đi được ||")
+                                
+                                # piece.clear_moves()
+                                
+                                # print("|| các nước đi được")
+                                # for move in piece.moves:
+                                #     init = move.initial
+                                #     fi = move.final
+                                #     print(init.row, init.col, "----", fi.row, fi.col)
+                                # print("các nước đi được ||")
+                                
                                 self.board.calc_moves(piece, clicked_row, clicked_col, bool=True)
+                                
+                                # print("|| các nước đi được")
+                                # for move in piece.moves:
+                                #     init = move.initial
+                                #     fi = move.final
+                                #     print(init.row, init.col, "----", fi.row, fi.col)
+                                # print("các nước đi được ||")
+                                
                                 self.dragger.save_initial(event.pos)
                                 self.dragger.drag_piece(piece)
                                 # show methods 
@@ -245,6 +268,14 @@ class Game:
 
                     if self.dragger.dragging:
                         self.dragger.update_mouse(event.pos)
+                        
+                        # s = self.board.squares[motion_row][motion_col]
+                        # if s.has_piece():
+                        #     p = s.piece
+                        #     print(s)
+                        #     print(p.name, p.color)
+                        #     print(s.isempty_or_enemy(self.dragger.piece.color))
+                        
                         # show methods
                         self.show_bg(screen)
                         self.show_last_move(screen)
@@ -273,8 +304,6 @@ class Game:
                             captured = self.board.squares[released_row][released_col].has_piece()
                             self.board.move(self.dragger.piece, move)
 
-                            self.board.set_true_en_passant(self.dragger.piece)                            
-
                             # sounds
                             check_sound = "capture" if captured else "move"
                             if self.sound: self.play_sound(check_sound)
@@ -289,6 +318,15 @@ class Game:
                                 self.display_paused_game(screen, winner)
                             # next turn
                             self.next_turn()
+                            print("=======")
+                        # for row in range(ROWS):
+                        #     for col in range(COLS):
+                        #         if self.board.squares[row][col].has_piece():
+                        #             tmp = self.board.squares[row][col].piece
+                        #             print(tmp.name, tmp.color, end=" ")
+                        #         else:
+                        #             print("name color", end=" ")
+                        #     print()
                     
                     self.dragger.undrag_piece()
                 
@@ -639,10 +677,8 @@ class Game:
             self.next_turn()
         else:
             # Kiểm tra nếu AI bị chiếu hết hoặc hòa
-            if self.board.is_checkmate(self.next_player):
+            if self.is_checkmate(self.next_player):
                 print("Checkmate! Người chơi thắng!")
-            elif self.board.is_stalemate(self.next_player):
-                print("Hòa cờ!")
             else:
                 print("AI không thể di chuyển, ván cờ kết thúc.")
 

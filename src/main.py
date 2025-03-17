@@ -20,7 +20,6 @@ class Main:
         
         # display menu
         choice = game.display_menu(screen)
-        print(choice)
 
         # display game
         if choice == PVP:
