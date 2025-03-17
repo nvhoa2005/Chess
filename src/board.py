@@ -160,15 +160,15 @@ class Board:
                         if bool:
                             if not self.in_check(piece, move):
                                 # append new move
-                                print("|| Nước được thêm")
-                                print(initial.row, initial.col, "----", final.row, final.col)
-                                print("Nước được thêm ||")
+                                # print("|| Nước được thêm")
+                                # print(initial.row, initial.col, "----", final.row, final.col)
+                                # print("Nước được thêm ||")
                                 piece.add_move(move)
                         else:
                             # append new move
-                            print("|| Nước được thêm")
-                            print(initial.row, initial.col, "----", final.row, final.col)
-                            print("Nước được thêm ||")
+                            # print("|| Nước được thêm")
+                            # print(initial.row, initial.col, "----", final.row, final.col)
+                            # print("Nước được thêm ||")
                             piece.add_move(move)
 
         def straightline_moves(incrs):
@@ -221,7 +221,7 @@ class Board:
                     possible_move_col = possible_move_col + col_incr
 
         def king_moves():
-            adjs = [
+            possible_moves = [
                 (row-1, col+0), # up
                 (row-1, col+1), # up-right
                 (row+0, col+1), # right
@@ -233,7 +233,7 @@ class Board:
             ]
 
             # normal moves
-            for possible_move in adjs:
+            for possible_move in possible_moves:
                 possible_move_row, possible_move_col = possible_move
 
                 if Square.in_range(possible_move_row, possible_move_col):
@@ -249,7 +249,6 @@ class Board:
                             if not self.in_check(piece, move):
                                 # append new move
                                 piece.add_move(move)
-                            else: break
                         else:
                             # append new move
                             piece.add_move(move)
