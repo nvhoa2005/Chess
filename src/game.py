@@ -91,10 +91,11 @@ class Game:
 
     def show_last_move(self, surface):
         theme = self.config.theme
-
-        if self.board.last_move:
-            initial = self.board.last_move.initial
-            final = self.board.last_move.final
+        lastestMove = self.board.getLastestMove()
+        
+        if lastestMove:
+            initial = lastestMove.initial
+            final = lastestMove.final
 
             for pos in [initial, final]:
                 # color
@@ -269,12 +270,9 @@ class Game:
                     if self.dragger.dragging:
                         self.dragger.update_mouse(event.pos)
                         
-                        # s = self.board.squares[motion_row][motion_col]
-                        # if s.has_piece():
-                        #     p = s.piece
-                        #     print(s)
-                        #     print(p.name, p.color)
-                        #     print(s.isempty_or_enemy(self.dragger.piece.color))
+                        s = self.board.squares[motion_row][motion_col]
+                        if s.has_piece():
+                            print(s.piece.moved)
                         
                         # show methods
                         self.show_bg(screen)
@@ -344,6 +342,16 @@ class Game:
                     # paused
                     if event.key == pygame.K_ESCAPE:
                         self.paused = not self.paused
+                        
+                    if event.key == pygame.K_b:
+                        if self.board.numberOfLastMove > 0:
+                            self.back()
+                            self.show_bg(screen)
+                            self.show_last_move(screen)
+                            self.show_pieces(screen)
+                            self.next_turn()
+                            print(self.next_player)
+                            print(self.board.numberOfLastMove)
 
                 # quit application
                 elif event.type == pygame.QUIT:
@@ -373,103 +381,149 @@ class Game:
             if self.next_player == "black":
                 self.ai_move(screen)
 
-            for event in pygame.event.get():
+            else:
+                for event in pygame.event.get():
 
-                # click
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if not self.paused:
-                        self.dragger.update_mouse(event.pos)
+                    # click
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if not self.paused:
+                            self.dragger.update_mouse(event.pos)
 
-                        clicked_row = self.dragger.mouseY // SQUARE_SIZE
-                        clicked_col = self.dragger.mouseX // SQUARE_SIZE
+                            clicked_row = self.dragger.mouseY // SQUARE_SIZE
+                            clicked_col = self.dragger.mouseX // SQUARE_SIZE
 
-                        # if clicked square has a piece ?
-                        if self.board.squares[clicked_row][clicked_col].has_piece():
-                            piece = self.board.squares[clicked_row][clicked_col].piece
-                            # valid piece (color) ?
-                            if piece.color == self.next_player:
-                                self.board.calc_moves(piece, clicked_row, clicked_col, bool=True)
-                                self.dragger.save_initial(event.pos)
-                                self.dragger.drag_piece(piece)
-                                # show methods 
-                                self.show_bg(screen)
-                                self.show_last_move(screen)
-                                self.show_moves(screen)
-                                self.show_pieces(screen)
-                
-                # mouse motion
-                elif event.type == pygame.MOUSEMOTION:
-                    motion_row = event.pos[1] // SQUARE_SIZE
-                    motion_col = event.pos[0] // SQUARE_SIZE
-
-                    self.set_hover(motion_row, motion_col)
-
-                    if self.dragger.dragging:
-                        self.dragger.update_mouse(event.pos)
-                        # show methods
-                        self.show_bg(screen)
-                        self.show_last_move(screen)
-                        self.show_moves(screen)
-                        self.show_pieces(screen)
-                        self.show_hover(screen)
-                        self.dragger.update_blit(screen)
-                
-                # click release
-                elif event.type == pygame.MOUSEBUTTONUP:
+                            # if clicked square has a piece ?
+                            if self.board.squares[clicked_row][clicked_col].has_piece():
+                                piece = self.board.squares[clicked_row][clicked_col].piece
+                                # valid piece (color) ?
+                                if piece.color == self.next_player:
+                                    
+                                    # print("|| các nước đi được")
+                                    # for move in piece.moves:
+                                    #     init = move.initial
+                                    #     fi = move.final
+                                    #     print(init.row, init.col, "----", fi.row, fi.col)
+                                    # print("các nước đi được ||")
+                                    
+                                    # piece.clear_moves()
+                                    
+                                    # print("|| các nước đi được")
+                                    # for move in piece.moves:
+                                    #     init = move.initial
+                                    #     fi = move.final
+                                    #     print(init.row, init.col, "----", fi.row, fi.col)
+                                    # print("các nước đi được ||")
+                                    
+                                    self.board.calc_moves(piece, clicked_row, clicked_col, bool=True)
+                                    
+                                    # print("|| các nước đi được")
+                                    # for move in piece.moves:
+                                    #     init = move.initial
+                                    #     fi = move.final
+                                    #     print(init.row, init.col, "----", fi.row, fi.col)
+                                    # print("các nước đi được ||")
+                                    
+                                    self.dragger.save_initial(event.pos)
+                                    self.dragger.drag_piece(piece)
+                                    # show methods 
+                                    self.show_bg(screen)
+                                    self.show_last_move(screen)
+                                    self.show_moves(screen)
+                                    self.show_pieces(screen)
                     
-                    if self.dragger.dragging:
-                        self.dragger.update_mouse(event.pos)
+                    # mouse motion
+                    elif event.type == pygame.MOUSEMOTION:
+                        motion_row = event.pos[1] // SQUARE_SIZE
+                        motion_col = event.pos[0] // SQUARE_SIZE
 
-                        released_row = self.dragger.mouseY // SQUARE_SIZE
-                        released_col = self.dragger.mouseX // SQUARE_SIZE
+                        self.set_hover(motion_row, motion_col)
 
-                        # create possible move
-                        initial = Square(self.dragger.initial_row, self.dragger.initial_col)
-                        final = Square(released_row, released_col)
-                        move = Move(initial, final)
-
-                        # valid move ?
-                        if self.board.valid_move(self.dragger.piece, move):
-                            # normal capture
-                            captured = self.board.squares[released_row][released_col].has_piece()
-                            self.board.move(self.dragger.piece, move)
-
-                            self.board.set_true_en_passant(self.dragger.piece)                            
-
-                            # sounds
-                            check_sound = "capture" if captured else "move"
-                            if self.sound: self.play_sound(check_sound)
+                        if self.dragger.dragging:
+                            self.dragger.update_mouse(event.pos)
+                            
+                            # s = self.board.squares[motion_row][motion_col]
+                            # if s.has_piece():
+                            #     p = s.piece
+                            #     print(s)
+                            #     print(p.name, p.color)
+                            #     print(s.isempty_or_enemy(self.dragger.piece.color))
+                            
                             # show methods
                             self.show_bg(screen)
                             self.show_last_move(screen)
+                            self.show_moves(screen)
                             self.show_pieces(screen)
-                            # next turn
-                            self.next_turn()
+                            self.show_hover(screen)
+                            self.dragger.update_blit(screen)
                     
-                    self.dragger.undrag_piece()
-                
-                # key press
-                elif event.type == pygame.KEYDOWN:
-                    
-                    # changing themes
-                    if event.key == pygame.K_t:
-                        self.change_theme()
-
-                    # changing themes
-                    if event.key == pygame.K_r:
-                        self.reset()
+                    # click release
+                    elif event.type == pygame.MOUSEBUTTONUP:
                         
-                    # paused
-                    if event.key == pygame.K_ESCAPE:
-                        self.paused = not self.paused
+                        if self.dragger.dragging:
+                            self.dragger.update_mouse(event.pos)
 
-                # quit application
-                elif event.type == pygame.QUIT:
-                    self.running = False
-                    pygame.quit()
-                    sys.exit()
-            
-            pygame.display.update()
+                            released_row = self.dragger.mouseY // SQUARE_SIZE
+                            released_col = self.dragger.mouseX // SQUARE_SIZE
+
+                            # create possible move
+                            initial = Square(self.dragger.initial_row, self.dragger.initial_col)
+                            final = Square(released_row, released_col)
+                            move = Move(initial, final)
+
+                            # valid move ?
+                            if self.board.valid_move(self.dragger.piece, move):
+                                # normal capture
+                                captured = self.board.squares[released_row][released_col].has_piece()
+                                self.board.move(self.dragger.piece, move)
+
+                                # sounds
+                                check_sound = "capture" if captured else "move"
+                                if self.sound: self.play_sound(check_sound)
+                                # show methods
+                                self.show_bg(screen)
+                                self.show_last_move(screen)
+                                self.show_pieces(screen)
+                                # check is_checkmate
+                                if self.is_checkmate():
+                                    winner = WHITE_WIN if self.next_player == "white" else BLACK_WIN
+                                    self.paused = True
+                                    self.display_paused_game(screen, winner)
+                                # next turn
+                                self.next_turn()
+                                print("=======")
+                            # for row in range(ROWS):
+                            #     for col in range(COLS):
+                            #         if self.board.squares[row][col].has_piece():
+                            #             tmp = self.board.squares[row][col].piece
+                            #             print(tmp.name, tmp.color, end=" ")
+                            #         else:
+                            #             print("name color", end=" ")
+                            #     print()
+                        
+                        self.dragger.undrag_piece()
+                    
+                    # key press
+                    elif event.type == pygame.KEYDOWN:
+                        
+                        # changing themes
+                        if event.key == pygame.K_t:
+                            self.change_theme()
+
+                        # changing themes
+                        if event.key == pygame.K_r:
+                            self.reset()
+                            
+                        # paused
+                        if event.key == pygame.K_ESCAPE:
+                            self.paused = not self.paused
+
+                    # quit application
+                    elif event.type == pygame.QUIT:
+                        self.running = False
+                        pygame.quit()
+                        sys.exit()
+                
+                pygame.display.update()
 
     def display_paused_game(self, screen, type=PAUSED_GAME):
         while self.paused:
@@ -588,6 +642,10 @@ class Game:
     def reset(self):
         self.__init__()
         
+    def back(self):
+        move = self.board.getLastestMove()
+        self.board.undo_move(move)
+        
     # Vẽ button
     def draw_button(self, screen, text, position, width, height, font, hover=False, type=PAUSED_GAME):
         # vị trí button
@@ -627,62 +685,103 @@ class Game:
             for col in range(COLS):
                 if self.board.squares[row][col].has_piece():
                     piece = self.board.squares[row][col].piece
-                    piece_value = piece.value
-                    value += piece_value 
+                    value -= piece.value
         return value
 
-    def ai_move(self, screen):
-        """Máy tính chọn nước đi tốt nhất hoặc kết thúc game nếu không có nước đi hợp lệ."""
-        best_move = None
-        best_value = float('-inf')
-        valid_moves = []
+    def alpha_beta(self, depth, alpha, beta, maximizing_player):
+        """
+        Thuật toán Alpha-Beta Pruning tối ưu hóa tìm kiếm Minimax.
+        """
+        if depth == 0:
+            return self.evaluate_board()
+        
+        if maximizing_player:
+            max_eval = float('-inf')
+            for row in range(ROWS):
+                for col in range(COLS):
+                    if self.board.squares[row][col].has_piece():
+                        piece = self.board.squares[row][col].piece
+                        if piece.color == "black":  # AI chơi quân Đen
+                            self.board.calc_moves(piece, row, col)
+                            for move in piece.moves:
+                                if self.board.in_check(piece, move):
+                                    continue
+                                self.board.move(piece, move)
+                                eval = self.alpha_beta(depth - 1, alpha, beta, False)
+                                self.board.undo_move(move)
+                                max_eval = max(max_eval, eval)
+                                alpha = max(alpha, eval)
+                                if beta <= alpha:
+                                    break
+            return max_eval
+        else:
+            min_eval = float('inf')
+            for row in range(ROWS):
+                for col in range(COLS):
+                    if self.board.squares[row][col].has_piece():
+                        piece = self.board.squares[row][col].piece
+                        if piece.color == "white":  # Người chơi quân Trắng
+                            self.board.calc_moves(piece, row, col)
+                            for move in piece.moves:
+                                if self.board.in_check(piece, move):
+                                    continue
+                                self.board.move(piece, move)
+                                eval = self.alpha_beta(depth - 1, alpha, beta, True)
+                                self.board.undo_move(move)
+                                min_eval = min(min_eval, eval)
+                                beta = min(beta, eval)
+                                if beta <= alpha:
+                                    break
+            return min_eval
 
-        # Lặp qua tất cả các quân cờ của AI
+    def best_move(self, depth):
+        """
+        Tìm nước đi tốt nhất sử dụng Alpha-Beta Pruning.
+        """
+        best_move = None
+        best_value = float('-inf')  
+        alpha = float('-inf')
+        beta = float('inf')
+        
         for row in range(ROWS):
             for col in range(COLS):
                 if self.board.squares[row][col].has_piece():
                     piece = self.board.squares[row][col].piece
-                    if piece.color == "black":  # Nếu là quân của AI
-                        self.board.calc_moves(piece, row, col)  # Tìm nước đi hợp lệ
-
+                    if piece.color == "black":  # AI chơi quân Đen
+                        self.board.calc_moves(piece, row, col)
                         for move in piece.moves:
-                            # Lưu lại quân bị ăn nếu có
-                            captured_piece = self.board.squares[move.final.row][move.final.col].piece
-
-                            # Kiểm tra phong cấp (nếu là tốt đến hàng cuối)
-                            promoted_from = None
-                            if isinstance(piece, Pawn) and (move.final.row == 0 or move.final.row == 7):
-                                promoted_from = piece
-
-                            # Tạo move mới có đầy đủ thông tin
-                            full_move = Move(move.initial, move.final, captured_piece, promoted_from)
-                            valid_moves.append((piece, full_move))
-
-                            # Giả lập nước đi
-                            self.board.move(piece, full_move)
-                            move_value = self.evaluate_board()
-                            self.board.undo_move(full_move)  # Quay lại trạng thái cũ
-
-                            # Chọn nước đi có điểm cao nhất
-                            if move_value > best_value:
+                            if self.board.in_check(piece, move):
+                                continue
+                            self.board.move(piece, move)
+                            move_value = self.alpha_beta(depth - 1, alpha, beta, False)
+                            self.board.undo_move(move)
+                            
+                            if move_value > best_value or (move_value == best_value and best_move is None):
                                 best_value = move_value
-                                best_move = (piece, full_move)
+                                best_move = (piece, move)
 
-        # Nếu có nước đi hợp lệ, thực hiện nước đi tốt nhất
+        
+        return best_move
+
+    def ai_move(self, screen):
+        """
+        Máy tính chọn nước đi tốt nhất hoặc kết thúc game nếu không có nước đi hợp lệ.
+        """
+        best_move = self.best_move(3)  # Độ sâu 3
+        print("pass")
         if best_move:
-            self.board.move(best_move[0], best_move[1])
+            piece, move = best_move
+            self.board.move(piece, move)
             self.show_bg(screen)
             self.show_last_move(screen)
             self.show_pieces(screen)
             self.next_turn()
         else:
             # Kiểm tra nếu AI bị chiếu hết hoặc hòa
-            if self.is_checkmate(self.next_player):
+            if self.is_checkmate():
                 print("Checkmate! Người chơi thắng!")
             else:
                 print("AI không thể di chuyển, ván cờ kết thúc.")
-
-            self.running = False  # Dừng game
          
     # chiếu hết
     def is_checkmate(self):

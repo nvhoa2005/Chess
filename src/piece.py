@@ -8,7 +8,7 @@ class Piece:
         value_sign = 1 if color == 'white' else -1
         self.value = value * value_sign
         self.moves = []
-        self.moved = False
+        self.moved = 0
         self.texture = texture
         self.set_texture()
         self.texture_rect = texture_rect

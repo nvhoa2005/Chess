@@ -4,21 +4,36 @@ from piece import *
 from move import Move
 from sound import Sound
 import copy
-import os
 
 class Board:
 
     def __init__(self):
         self.squares = [[0, 0, 0, 0, 0, 0, 0, 0] for col in range(COLS)]
-        self.last_move = None
+        self.last_moves = []
+        self.numberOfLastMove = 0
         self._create()
         self._add_pieces('white')
         self._add_pieces('black')
 
+    def getLastestMove(self):
+        if self.numberOfLastMove > 0 and len(self.last_moves) > 0:
+            return self.last_moves[-1]  
+        return None
+
+    def add_lastMove(self, move):
+        self.last_moves.append(move)
+        self.numberOfLastMove = len(self.last_moves)
+        
+    def delete_nearestMove(self):
+        self.numberOfLastMove -=1
+        self.last_moves.pop()
 
     def move(self, piece, move, testing=False):
         initial = move.initial
         final = move.final
+
+        # Lưu quân cờ bị ăn (nếu có)
+        move.captured_piece = self.squares[final.row][final.col].piece
 
         # console board move update
         self.squares[initial.row][initial.col].piece = None
@@ -34,20 +49,18 @@ class Board:
                 rook = None
                 if diff < 0:
                     rook = piece.left_rook
-                    print("left rook ", rook.row, rook.col)
                 else:
                     rook = piece.right_rook
-                    print("right rook ", rook.row, rook.col)
                 self.move(rook, rook.moves[-1])
 
         # move
-        piece.moved = True
+        piece.moved +=1
 
         # clear valid moves
         piece.clear_moves()
 
         # set last move
-        self.last_move = move
+        self.add_lastMove(move)
 
     def valid_move(self, piece, move):
         return move in piece.moves
@@ -405,6 +418,7 @@ class Board:
         initial = move.initial
         final = move.final
         moved_piece = self.squares[final.row][final.col].piece
+        print("undo:", final.row, final.col)
 
         # Khôi phục quân cờ về vị trí ban đầu
         self.squares[initial.row][initial.col].piece = moved_piece
@@ -413,11 +427,6 @@ class Board:
         # Hoàn tác phong cấp tốt (nếu có)
         if move.promoted_from is not None:
             self.squares[initial.row][initial.col].piece = move.promoted_from  # Trả lại tốt ban đầu
-
-        # Hoàn tác bắt tốt qua đường (En passant)
-        if isinstance(moved_piece, Pawn) and final.col != initial.col and move.captured_piece is None:
-            captured_pawn = Pawn("white" if moved_piece.color == "black" else "black")
-            self.squares[initial.row][final.col].piece = captured_pawn  # Trả lại tốt bị bắt
 
         # Hoàn tác nhập thành (castling)
         if isinstance(moved_piece, King) and abs(final.col - initial.col) == 2:
@@ -429,6 +438,10 @@ class Board:
             rook = self.squares[initial.row][rook_final_col].piece
             self.squares[initial.row][rook_initial_col].piece = rook  # Đưa xe về vị trí ban đầu
             self.squares[initial.row][rook_final_col].piece = None  # Xóa xe khỏi vị trí mới
+            
+            self.squares[initial.row][rook_initial_col].piece.moved -=1
+            self.delete_nearestMove()
 
         # Hoàn tác trạng thái di chuyển của quân cờ
-        moved_piece.moved = False
+        moved_piece.moved -=1
+        self.delete_nearestMove()
