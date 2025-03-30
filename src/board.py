@@ -278,7 +278,15 @@ class Board:
                             # castling is not possible because there are pieces in between ?
                             if self.squares[row][c].has_piece():
                                 break
-
+                            
+                            # check valid castling
+                            initial = Square(row, col)
+                            final = Square(row, c) 
+                            # create new move
+                            move = Move(initial, final)
+                            if self.in_check(piece, move):
+                                break
+                            
                             if c == 3:
                                 # adds left rook to king
                                 piece.left_rook = left_rook
@@ -313,6 +321,14 @@ class Board:
                         for c in range(5, 7):
                             # castling is not possible because there are pieces in between ?
                             if self.squares[row][c].has_piece():
+                                break
+
+                            # check valid castling
+                            initial = Square(row, col)
+                            final = Square(row, c) 
+                            # create new move
+                            move = Move(initial, final)
+                            if self.in_check(piece, move):
                                 break
 
                             if c == 6:
