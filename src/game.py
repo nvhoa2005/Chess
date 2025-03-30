@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 
 from const import *
 from board import Board
@@ -7,7 +8,7 @@ from dragger import Dragger
 from config import Config
 from square import Square
 from move import Move
-from piece import Pawn
+from piece import *
 
 class Game:
 
@@ -24,9 +25,11 @@ class Game:
         self.sound_rect = pygame.Rect(SOUND_RECT)
         # theo dõi nút đang được hover
         self.last_hover_button = None
+        
+        # fifty-move rule
+        self.count_fifty_move_rule = 0
 
     # blit methods
-
     def show_bg(self, surface):
         theme = self.config.theme
         
@@ -66,13 +69,11 @@ class Game:
                 if self.board.squares[row][col].has_piece():
                     piece = self.board.squares[row][col].piece
                     
-                    # all pieces except dragger piece
-                    if piece is not self.dragger.piece:
-                        piece.set_texture(size=80)
-                        img = pygame.image.load(piece.texture)
-                        img_center = col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2
-                        piece.texture_rect = img.get_rect(center=img_center)
-                        surface.blit(img, piece.texture_rect)
+                    piece.set_texture(size=80)
+                    img = pygame.image.load(piece.texture)
+                    img_center = col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2
+                    piece.texture_rect = img.get_rect(center=img_center)
+                    surface.blit(img, piece.texture_rect)
 
     def show_moves(self, surface):
         theme = self.config.theme
@@ -270,10 +271,6 @@ class Game:
                     if self.dragger.dragging:
                         self.dragger.update_mouse(event.pos)
                         
-                        s = self.board.squares[motion_row][motion_col]
-                        if s.has_piece():
-                            print(s.piece.moved)
-                        
                         # show methods
                         self.show_bg(screen)
                         self.show_last_move(screen)
@@ -300,8 +297,16 @@ class Game:
                         if self.board.valid_move(self.dragger.piece, move):
                             # normal capture
                             captured = self.board.squares[released_row][released_col].has_piece()
-                            self.board.move(self.dragger.piece, move)
 
+                            if isinstance(self.dragger.piece, Pawn) or self.board.squares[released_row][released_col].has_piece():
+                                self.count_fifty_move_rule = 0
+                            else:
+                                self.count_fifty_move_rule += 1
+                            print("Count fifty move rule: ", self.count_fifty_move_rule)
+                            
+                            check_promotion = list()
+                            self.board.move(self.dragger.piece, move, promotion=check_promotion)
+                            
                             # sounds
                             check_sound = "capture" if captured else "move"
                             if self.sound: self.play_sound(check_sound)
@@ -309,11 +314,23 @@ class Game:
                             self.show_bg(screen)
                             self.show_last_move(screen)
                             self.show_pieces(screen)
+                            
+                            # check promotion
+                            if len(check_promotion) > 0:
+                                self.display_promotion(piece, final, screen)
+                                
                             # check is_checkmate
                             if self.is_checkmate():
                                 winner = WHITE_WIN if self.next_player == "white" else BLACK_WIN
                                 self.paused = True
                                 self.display_paused_game(screen, winner)
+                                
+                            # check draw
+                            if self.is_draw():
+                                winner = DRAW
+                                self.paused = True
+                                self.display_paused_game(screen, winner)
+                                
                             # next turn
                             self.next_turn()
                             print("=======")
@@ -526,14 +543,7 @@ class Game:
                 pygame.display.update()
 
     def display_paused_game(self, screen, type=PAUSED_GAME):
-        while self.paused:
-            # if self.sound:
-            #     self.show_sound(screen, self.sound)
-            #     self.unpause_sound()
-            # else:
-            #     self.show_sound(screen, self.sound)
-            #     self.pause_sound()
-            
+        while True:
             if type == PAUSED_GAME:
                 # Hiển thị chữ "PAUSE"
                 pause_text = self.config.paused_font.render("PAUSED", True, (200, 200, 200))
@@ -547,6 +557,11 @@ class Game:
             elif type == BLACK_WIN:
                 # Hiển thị chữ "BLACK WIN"
                 pause_text = self.config.paused_font.render("BLACK WIN", True, BLACK)
+                pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
+                screen.blit(pause_text, pause_rect)
+            elif type == DRAW:
+                # Hiển thị chữ "DRAW"
+                pause_text = self.config.paused_font.render("DRAW", True, BLACK)
                 pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
                 screen.blit(pause_text, pause_rect)
 
@@ -603,6 +618,60 @@ class Game:
                         else: self.sound = True
                 elif event.type == pygame.QUIT:
                     self.running = False
+                    pygame.quit()
+                    sys.exit()
+                    
+    def display_promotion(self, piece, final, screen):
+        selecting = True
+        while selecting:
+            # Vẽ khung nền cho text 
+            box_width, box_height = 600, 450
+            box_rect = pygame.Rect(WIDTH // 2 - box_width // 2, HEIGHT // 2 - 150, box_width, box_height)
+            self.draw_transparent_rect(screen, (50, 50, 50), box_rect, 180, border_radius=25) 
+            pygame.draw.rect(screen, WHITE, box_rect, 5, border_radius=25)  
+
+            # Hiển thị text
+            title_text = self.config.start_menu_font.render("Select", True, BLACK)
+            title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
+            screen.blit(title_text, title_rect)
+
+            # Lấy vị trí chuột
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            
+            promotion_options = [("Queen", -60), ("Rook", 40), ("Bishop", 140), ("Knight", 240)]
+            option_rects = {}
+
+            for text, y_offset in promotion_options:
+                button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.start_menu_font, hover=False)
+                if button_rect.collidepoint(mouse_x, mouse_y):
+                    if self.last_hover_button != text:  
+                        if self.sound: self.play_sound("hover")
+                        self.last_hover_button = text
+                
+                    button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.start_menu_font, hover=True)
+                elif self.last_hover_button == text: 
+                    self.last_hover_button = None
+
+                option_rects[text] = button_rect
+
+            pygame.display.update()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.sound:
+                        self.play_sound("click")
+                    for option, rect in option_rects.items():
+                        if rect.collidepoint(event.pos):
+                            if option == "Queen":
+                                self.board.squares[final.row][final.col].piece = Queen(piece.color)
+                            elif option == "Rook":
+                                self.board.squares[final.row][final.col].piece = Rook(piece.color)
+                            elif option == "Bishop":
+                                self.board.squares[final.row][final.col].piece = Bishop(piece.color)
+                            elif option == "Knight":
+                                self.board.squares[final.row][final.col].piece = Knight(piece.color)
+                            selecting = False
+                elif event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
@@ -680,94 +749,164 @@ class Game:
     # =====================AI=======================
         
     def evaluate_board(self):
+        """
+        Đánh giá bàn cờ dựa trên giá trị quân cờ, vị trí và chiến thuật.
+        """
         value = 0
+        center_squares = {(3, 3), (3, 4), (4, 3), (4, 4)}  # Trung tâm bàn cờ
+        piece_square_table = {
+            "pawn": [
+                0, 1, 2, 4, 5, 4, 2, 1,
+                0, 1, 2, 3, 4, 3, 2, 1,
+                0, 0, 1, 2, 3, 2, 1, 0,
+                0, 0, 0, 1, 2, 1, 0, 0,
+                0, 0, 0, 1, 2, 1, 0, 0,
+                0, 0, 1, 2, 3, 2, 1, 0,
+                0, 1, 2, 3, 4, 3, 2, 1,
+                0, 1, 2, 4, 5, 4, 2, 1
+            ],
+            "knight": [
+                -5, -3, 0, 0, 0, 0, -3, -5,
+                -3, 0, 3, 4, 4, 3, 0, -3,
+                0, 3, 5, 6, 6, 5, 3, 0,
+                0, 4, 6, 7, 7, 6, 4, 0,
+                0, 4, 6, 7, 7, 6, 4, 0,
+                0, 3, 5, 6, 6, 5, 3, 0,
+                -3, 0, 3, 4, 4, 3, 0, -3,
+                -5, -3, 0, 0, 0, 0, -3, -5
+            ],
+            "bishop": [
+                -2, -1, 0, 0, 0, 0, -1, -2,
+                -1, 2, 3, 3, 3, 3, 2, -1,
+                0, 3, 4, 5, 5, 4, 3, 0,
+                0, 3, 5, 6, 6, 5, 3, 0,
+                0, 3, 5, 6, 6, 5, 3, 0,
+                0, 3, 4, 5, 5, 4, 3, 0,
+                -1, 2, 3, 3, 3, 3, 2, -1,
+                -2, -1, 0, 0, 0, 0, -1, -2
+            ],
+            "rook": [
+                0, 0, 1, 2, 2, 1, 0, 0,
+                -1, 0, 0, 0, 0, 0, 0, -1,
+                -1, 0, 0, 0, 0, 0, 0, -1,
+                -1, 0, 0, 0, 0, 0, 0, -1,
+                -1, 0, 0, 0, 0, 0, 0, -1,
+                -1, 0, 0, 0, 0, 0, 0, -1,
+                1, 2, 2, 2, 2, 2, 2, 1,
+                0, 0, 1, 2, 2, 1, 0, 0
+            ],
+            "queen": [
+                -2, -1, 0, 1, 1, 0, -1, -2,
+                -1, 0, 1, 1, 1, 1, 0, -1,
+                0, 1, 1, 1, 1, 1, 1, 0,
+                1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1,
+                0, 1, 1, 1, 1, 1, 1, 0,
+                -1, 0, 1, 1, 1, 1, 0, -1,
+                -2, -1, 0, 1, 1, 0, -1, -2
+            ],
+            "king": [
+                5, 5, 5, -5, -5, 5, 5, 5,
+                3, 3, 3, -5, -5, 3, 3, 3,
+                1, 1, 0, -5, -5, 0, 1, 1,
+                0, 0, -5, -10, -10, -5, 0, 0,
+                0, 0, -5, -10, -10, -5, 0, 0,
+                1, 1, 0, -5, -5, 0, 1, 1,
+                3, 3, 3, -5, -5, 3, 3, 3,
+                5, 5, 5, -5, -5, 5, 5, 5
+            ]
+        }
+        
         for row in range(ROWS):
             for col in range(COLS):
                 if self.board.squares[row][col].has_piece():
                     piece = self.board.squares[row][col].piece
-                    value -= piece.value
+                    base_value = piece.value
+                    position_value = piece_square_table.get(piece.name, [0] * 64)[row * 8 + col] * 0.2  # Giảm trọng số vị trí
+                    center_bonus = 2 if (row, col) in center_squares else 0
+                    value += base_value + position_value + center_bonus if piece.color == "white" else - (base_value + position_value + center_bonus)
         return value
 
     def alpha_beta(self, depth, alpha, beta, maximizing_player):
         """
-        Thuật toán Alpha-Beta Pruning tối ưu hóa tìm kiếm Minimax.
+        Cải tiến Alpha-Beta Pruning để tối ưu AI.
         """
-        if depth == 0:
+        if depth == 0 or self.is_checkmate():
             return self.evaluate_board()
+        
+        moves = self.get_all_moves("black" if maximizing_player else "white")
+        
+        # Ưu tiên nước đi ăn quân
+        moves.sort(key=lambda x: (x[1].final.piece.value if x[1].final.piece else 0), reverse=True)
         
         if maximizing_player:
             max_eval = float('-inf')
-            for row in range(ROWS):
-                for col in range(COLS):
-                    if self.board.squares[row][col].has_piece():
-                        piece = self.board.squares[row][col].piece
-                        if piece.color == "black":  # AI chơi quân Đen
-                            self.board.calc_moves(piece, row, col)
-                            for move in piece.moves:
-                                if self.board.in_check(piece, move):
-                                    continue
-                                self.board.move(piece, move)
-                                eval = self.alpha_beta(depth - 1, alpha, beta, False)
-                                self.board.undo_move(move)
-                                max_eval = max(max_eval, eval)
-                                alpha = max(alpha, eval)
-                                if beta <= alpha:
-                                    break
+            for piece, move in moves:
+                self.board.move(piece, move)
+                eval = self.alpha_beta(depth - 1, alpha, beta, False)
+                self.board.undo_move(move)
+                max_eval = max(max_eval, eval)
+                alpha = max(alpha, eval)
+                if beta <= alpha:
+                    break
             return max_eval
         else:
             min_eval = float('inf')
-            for row in range(ROWS):
-                for col in range(COLS):
-                    if self.board.squares[row][col].has_piece():
-                        piece = self.board.squares[row][col].piece
-                        if piece.color == "white":  # Người chơi quân Trắng
-                            self.board.calc_moves(piece, row, col)
-                            for move in piece.moves:
-                                if self.board.in_check(piece, move):
-                                    continue
-                                self.board.move(piece, move)
-                                eval = self.alpha_beta(depth - 1, alpha, beta, True)
-                                self.board.undo_move(move)
-                                min_eval = min(min_eval, eval)
-                                beta = min(beta, eval)
-                                if beta <= alpha:
-                                    break
+            for piece, move in moves:
+                self.board.move(piece, move)
+                eval = self.alpha_beta(depth - 1, alpha, beta, True)
+                self.board.undo_move(move)
+                min_eval = min(min_eval, eval)
+                beta = min(beta, eval)
+                if beta <= alpha:
+                    break
             return min_eval
 
-    def best_move(self, depth):
+    def get_all_moves(self, color):
         """
-        Tìm nước đi tốt nhất sử dụng Alpha-Beta Pruning.
+        Lấy tất cả các nước đi hợp lệ cho màu cờ được chọn.
         """
-        best_move = None
-        best_value = float('-inf')  
-        alpha = float('-inf')
-        beta = float('inf')
-        
+        moves = []
         for row in range(ROWS):
             for col in range(COLS):
                 if self.board.squares[row][col].has_piece():
                     piece = self.board.squares[row][col].piece
-                    if piece.color == "black":  # AI chơi quân Đen
+                    if piece.color == color:
                         self.board.calc_moves(piece, row, col)
                         for move in piece.moves:
-                            if self.board.in_check(piece, move):
-                                continue
-                            self.board.move(piece, move)
-                            move_value = self.alpha_beta(depth - 1, alpha, beta, False)
-                            self.board.undo_move(move)
-                            
-                            if move_value > best_value or (move_value == best_value and best_move is None):
-                                best_value = move_value
-                                best_move = (piece, move)
+                            moves.append((piece, move))
+        return moves
 
+    def best_move(self, depth):
+        """
+        Cải thiện chọn nước đi tốt nhất dựa trên Alpha-Beta Pruning.
+        """
+        best_moves = []
+        best_value = float('-inf')
+        alpha = float('-inf')
+        beta = float('inf')
         
-        return best_move
+        moves = self.get_all_moves("black")
+        moves.sort(key=lambda x: x[1].final.piece.value if x[1].final.piece else 0, reverse=True)  # Ưu tiên ăn quân
+        
+        for piece, move in moves:
+            self.board.move(piece, move)
+            move_value = self.alpha_beta(depth - 1, alpha, beta, False)
+            self.board.undo_move(move)
+            
+            if move_value > best_value:
+                best_value = move_value
+                best_moves = [(piece, move)]
+            elif move_value == best_value:
+                best_moves.append((piece, move))
+        
+        return random.choice(best_moves) if best_moves else None
 
     def ai_move(self, screen):
         """
         Máy tính chọn nước đi tốt nhất hoặc kết thúc game nếu không có nước đi hợp lệ.
         """
-        best_move = self.best_move(3)  # Độ sâu 3
+        best_move = self.best_move(2)  # Độ sâu 3
         print("pass")
         if best_move:
             piece, move = best_move
@@ -793,3 +932,7 @@ class Game:
                     if len(piece.moves) != 0:
                         return False
         return True
+    
+    def is_draw(self):
+        if self.count_fifty_move_rule == 50:
+            return True

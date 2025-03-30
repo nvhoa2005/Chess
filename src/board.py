@@ -3,6 +3,7 @@ from square import Square
 from piece import *
 from move import Move
 from sound import Sound
+import pygame
 import copy
 
 class Board:
@@ -28,7 +29,7 @@ class Board:
         self.numberOfLastMove -=1
         self.last_moves.pop()
 
-    def move(self, piece, move, testing=False):
+    def move(self, piece, move, testing=False, promotion=None):
         initial = move.initial
         final = move.final
 
@@ -40,8 +41,9 @@ class Board:
         self.squares[final.row][final.col].piece = piece
 
         if isinstance(piece, Pawn):
-            self.check_promotion(piece, final)
-
+            if promotion is not None and self.check_promotion(final):
+                promotion.append(1)
+            
         # king castling
         if isinstance(piece, King):
             if not piece.moved and self.castling(initial, final) and not testing:
@@ -65,9 +67,9 @@ class Board:
     def valid_move(self, piece, move):
         return move in piece.moves
 
-    def check_promotion(self, piece, final):
+    def check_promotion(self, final):
         if final.row == 0 or final.row == 7:
-            self.squares[final.row][final.col].piece = Queen(piece.color)
+            return True
 
     def castling(self, initial, final):
         return abs(initial.col - final.col) == 2
@@ -418,7 +420,6 @@ class Board:
         initial = move.initial
         final = move.final
         moved_piece = self.squares[final.row][final.col].piece
-        print("undo:", final.row, final.col)
 
         # Khôi phục quân cờ về vị trí ban đầu
         self.squares[initial.row][initial.col].piece = moved_piece
