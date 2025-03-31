@@ -35,6 +35,9 @@ class Board:
 
         # Lưu quân cờ bị ăn (nếu có)
         move.captured_piece = self.squares[final.row][final.col].piece
+        
+        if move.enpassant_captured_piece_row is not None:
+            move.captured_piece = self.squares[move.enpassant_captured_piece_row][move.enpassant_captured_piece_col].piece
 
         # console board move update
         self.squares[initial.row][initial.col].piece = None
@@ -62,10 +65,21 @@ class Board:
         piece.clear_moves()
 
         # set last move
-        self.add_lastMove(move)
+        if not testing:
+            self.add_lastMove(move)
 
     def valid_move(self, piece, move):
-        return move in piece.moves
+        for m in piece.moves:
+            if move == m and m.enpassant_captured_piece_row is not None:
+                move.enpassant_captured_piece_prev_row = m.enpassant_captured_piece_prev_row
+                move.enpassant_captured_piece_prev_col = m.enpassant_captured_piece_prev_col
+                move.enpassant_captured_piece_row = m.enpassant_captured_piece_row
+                move.enpassant_captured_piece_col = m.enpassant_captured_piece_col
+                return 2
+            elif move == m:
+                return 1
+        return 0
+        
 
     def check_promotion(self, final):
         if final.row == 0 or final.row == 7:
@@ -86,6 +100,8 @@ class Board:
                     temp_board.calc_moves(p, row, col, bool=False)
                     for m in p.moves:
                         if isinstance(m.final.piece, King):
+                            del temp_piece
+                            del temp_board
                             return True
         return False
 
@@ -106,8 +122,10 @@ class Board:
                 if Square.in_range(possible_move_row):
                     if self.squares[possible_move_row][col].isempty():
                         # create initial and final move squares
-                        initial = Square(row, col)
-                        final = Square(possible_move_row, col)
+                        initial_p = self.squares[row][col].piece
+                        final_p = self.squares[possible_move_row][col].piece
+                        initial = Square(row, col, initial_p)
+                        final = Square(possible_move_row, col, final_p)
                         # create a new move
                         move = Move(initial, final)
 
@@ -131,9 +149,10 @@ class Board:
                 if Square.in_range(possible_move_row, possible_move_col):
                     if self.squares[possible_move_row][possible_move_col].has_enemy_piece(piece.color):
                         # create initial and final move squares
-                        initial = Square(row, col)
-                        final_piece = self.squares[possible_move_row][possible_move_col].piece
-                        final = Square(possible_move_row, possible_move_col, final_piece)
+                        initial_p1 = self.squares[row][col].piece
+                        final_p1 = self.squares[possible_move_row][possible_move_col].piece
+                        initial = Square(row, col, initial_p1)
+                        final = Square(possible_move_row, possible_move_col, final_p1)
                         # create a new move
                         move = Move(initial, final)
                         
@@ -145,6 +164,31 @@ class Board:
                         else:
                             # append new move
                             piece.add_move(move)
+                            
+            # en passant
+            last_move = self.getLastestMove()
+            if last_move:
+                last_piece = last_move.initial.piece
+                if isinstance(last_piece, Pawn):
+                    if abs(last_move.final.row - last_move.initial.row) == 2:
+                        if last_move.final.row == row:
+                            side_col = last_move.final.col
+                            if Square.in_range(row, side_col):
+                                side_square = self.squares[row][side_col]
+                                if side_square.has_enemy_piece(piece.color):
+                                    if isinstance(side_square.piece, Pawn):
+                                        # create en passant move
+                                        initial_p2 = self.squares[row][col].piece
+                                        final_p2 = self.squares[row + piece.dir][side_col].piece
+                                        initial = Square(row, col, initial_p2)
+                                        final = Square(row + piece.dir, side_col, final_p2)
+                                        move = Move(initial, final, enpassant_captured_piece_prev_row=last_move.initial.row, enpassant_captured_piece_prev_col=last_move.initial.col, enpassant_captured_piece_row=row, enpassant_captured_piece_col=side_col)
+                                        
+                                        if bool:
+                                            if not self.in_check(piece, move):
+                                                piece.add_move(move)
+                                        else:
+                                            piece.add_move(move)
 
         def knight_moves():
             # 8 possible moves
@@ -165,9 +209,10 @@ class Board:
                 if Square.in_range(possible_move_row, possible_move_col):
                     if self.squares[possible_move_row][possible_move_col].isempty_or_enemy(piece.color):
                         # create squares of the new move
-                        initial = Square(row, col)
-                        final_piece = self.squares[possible_move_row][possible_move_col].piece
-                        final = Square(possible_move_row, possible_move_col, final_piece)
+                        initial_p3 = self.squares[row][col].piece
+                        final_p3 = self.squares[possible_move_row][possible_move_col].piece
+                        initial = Square(row, col, initial_p3)
+                        final = Square(possible_move_row, possible_move_col, final_p3)
                         # create new move
                         move = Move(initial, final)
                         
@@ -195,9 +240,10 @@ class Board:
                 while True:
                     if Square.in_range(possible_move_row, possible_move_col):
                         # create squares of the possible new move
-                        initial = Square(row, col)
-                        final_piece = self.squares[possible_move_row][possible_move_col].piece
-                        final = Square(possible_move_row, possible_move_col, final_piece)
+                        initial_p4 = self.squares[row][col].piece
+                        final_p4 = self.squares[possible_move_row][possible_move_col].piece
+                        initial = Square(row, col, initial_p4)
+                        final = Square(possible_move_row, possible_move_col, final_p4)
                         # create a possible new move
                         move = Move(initial, final)
 
@@ -254,9 +300,10 @@ class Board:
                 if Square.in_range(possible_move_row, possible_move_col):
                     if self.squares[possible_move_row][possible_move_col].isempty_or_enemy(piece.color):
                         # create squares of the new move
-                        initial = Square(row, col)
-                        final_piece = self.squares[possible_move_row][possible_move_col].piece
-                        final = Square(possible_move_row, possible_move_col, final_piece) # piece=piece
+                        initial_p5 = self.squares[row][col].piece
+                        final_p5 = self.squares[possible_move_row][possible_move_col].piece
+                        initial = Square(row, col, initial_p5)
+                        final = Square(possible_move_row, possible_move_col, final_p5) # piece=piece
                         # create new move
                         move = Move(initial, final)
                         # check potencial checks
@@ -297,8 +344,10 @@ class Board:
                                 moveR = Move(initial, final)
 
                                 # king move
-                                initial = Square(row, col)
-                                final = Square(row, 2)
+                                initial_p6 = self.squares[row][col].piece
+                                final_p6 = self.squares[row][2].piece
+                                initial = Square(row, col, initial_p6)
+                                final = Square(row, 2, final_p6)
                                 moveK = Move(initial, final)
 
                                 # check potencial checks
@@ -341,8 +390,10 @@ class Board:
                                 moveR = Move(initial, final)
 
                                 # king move
-                                initial = Square(row, col)
-                                final = Square(row, 6)
+                                initial_p7 = self.squares[row][col].piece
+                                final_p7 = self.squares[row][6].piece
+                                initial = Square(row, col, initial_p7)
+                                final = Square(row, 6, final_p7)
                                 moveK = Move(initial, final)
 
                                 # check potencial checks
@@ -437,9 +488,15 @@ class Board:
         final = move.final
         moved_piece = self.squares[final.row][final.col].piece
 
-        # Khôi phục quân cờ về vị trí ban đầu
-        self.squares[initial.row][initial.col].piece = moved_piece
-        self.squares[final.row][final.col].piece = move.captured_piece  # Khôi phục quân cờ bị ăn (nếu có)
+        if move.enpassant_captured_piece_row is None:
+            # Khôi phục quân cờ về vị trí ban đầu
+            self.squares[initial.row][initial.col].piece = moved_piece
+            self.squares[final.row][final.col].piece = move.captured_piece  # Khôi phục quân cờ bị ăn (nếu có)
+        else:
+            # Khôi phục quân enpassant
+            self.squares[initial.row][initial.col].piece = moved_piece
+            self.squares[final.row][final.col].piece = None
+            self.squares[move.enpassant_captured_piece_row][move.enpassant_captured_piece_col].piece = move.captured_piece
 
         # Hoàn tác phong cấp tốt (nếu có)
         if move.promoted_from is not None:

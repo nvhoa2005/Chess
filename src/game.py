@@ -289,8 +289,10 @@ class Game:
                         released_col = self.dragger.mouseX // SQUARE_SIZE
 
                         # create possible move
-                        initial = Square(self.dragger.initial_row, self.dragger.initial_col)
-                        final = Square(released_row, released_col)
+                        initial_p = self.board.squares[self.dragger.initial_row][self.dragger.initial_col].piece
+                        final_p = self.board.squares[released_row][released_col].piece
+                        initial = Square(self.dragger.initial_row, self.dragger.initial_col, initial_p)
+                        final = Square(released_row, released_col, final_p)
                         move = Move(initial, final)
 
                         # valid move ?
@@ -306,6 +308,8 @@ class Game:
                             
                             check_promotion = list()
                             self.board.move(self.dragger.piece, move, promotion=check_promotion)
+                            if move.enpassant_captured_piece_row is not None:
+                                self.board.squares[move.enpassant_captured_piece_row][move.enpassant_captured_piece_col].piece = None
                             
                             # sounds
                             check_sound = "capture" if captured else "move"
@@ -333,7 +337,6 @@ class Game:
                                 
                             # next turn
                             self.next_turn()
-                            print("=======")
                         # for row in range(ROWS):
                         #     for col in range(COLS):
                         #         if self.board.squares[row][col].has_piece():
@@ -367,8 +370,6 @@ class Game:
                             self.show_last_move(screen)
                             self.show_pieces(screen)
                             self.next_turn()
-                            print(self.next_player)
-                            print(self.board.numberOfLastMove)
 
                 # quit application
                 elif event.type == pygame.QUIT:
@@ -483,8 +484,10 @@ class Game:
                             released_col = self.dragger.mouseX // SQUARE_SIZE
 
                             # create possible move
-                            initial = Square(self.dragger.initial_row, self.dragger.initial_col)
-                            final = Square(released_row, released_col)
+                            initial_p = self.board.squares[self.dragger.initial_row][self.dragger.initial_col].piece
+                            final_p = self.board.squares[released_row][released_col].piece
+                            initial = Square(self.dragger.initial_row, self.dragger.initial_col, initial_p)
+                            final = Square(released_row, released_col, final_p)
                             move = Move(initial, final)
 
                             # valid move ?
@@ -507,7 +510,6 @@ class Game:
                                     self.display_paused_game(screen, winner)
                                 # next turn
                                 self.next_turn()
-                                print("=======")
                             # for row in range(ROWS):
                             #     for col in range(COLS):
                             #         if self.board.squares[row][col].has_piece():
