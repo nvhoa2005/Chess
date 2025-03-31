@@ -1,3 +1,6 @@
+# Caption
+GAME_NAME = "Chess"
+
 # Screen
 WIDTH = 800
 HEIGHT = 800
@@ -35,3 +38,38 @@ BLACK_WIN = 100
 WHITE_WIN = 200
 PAUSED_GAME = 300
 DRAW = 150
+
+# Piece
+KING = "king"
+QUEEN = "queen"
+ROOK = "rook"
+BISHOP = "bishop"
+KNIGHT = "knight"
+PAWN = "pawn"
+
+# Piece color
+WHITE_PIECE = "white"
+BLACK_PIECE = "black"
+
+# Player
+WHITE_PLAYER = "white"
+BLACK_PLAYER = "black"
+
+# Sound
+CAPTURE = "capture"
+MOVE = "move"
+
+# Font
+FONT_GAME = "monospace"
+
+# Text
+PAUSED_TEXT = "PAUSED"
+WHITE_WIN_TEXT = "WHITE WIN"
+BLACK_WIN_TEXT = "BLACK WIN"
+DRAW_TEXT = "DRAW"
+
+# Other
+SELECT_MODE = "Select mode"
+HOVER = "hover"
+CLICK = "click"
+

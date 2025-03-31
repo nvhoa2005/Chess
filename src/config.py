@@ -13,10 +13,10 @@ class Config:
         self._add_themes()
         self.idx = 0
         self.theme = self.themes[self.idx]
-        self.font = pygame.font.SysFont('monospace', 18, bold=True)
-        self.paused_font = pygame.font.SysFont('monospace', 120, bold=True)
-        self.paused_options_font = pygame.font.SysFont('monospace', 50, bold=True)
-        self.start_menu_font = pygame.font.SysFont('monospace', 50, bold=True)
+        self.font = pygame.font.SysFont(FONT_GAME, 18, bold=True)
+        self.paused_font = pygame.font.SysFont(FONT_GAME, 120, bold=True)
+        self.paused_options_font = pygame.font.SysFont(FONT_GAME, 50, bold=True)
+        self.start_menu_font = pygame.font.SysFont(FONT_GAME, 50, bold=True)
         # video
         self.background_video = Video(
             os.path.join('assets/videos/background_video.mp4'))

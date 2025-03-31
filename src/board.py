@@ -2,8 +2,6 @@ from const import *
 from square import Square
 from piece import *
 from move import Move
-from sound import Sound
-import pygame
 import copy
 
 class Board:
@@ -13,8 +11,8 @@ class Board:
         self.last_moves = []
         self.numberOfLastMove = 0
         self._create()
-        self._add_pieces('white')
-        self._add_pieces('black')
+        self._add_pieces(WHITE_PIECE)
+        self._add_pieces(BLACK_PIECE)
 
     def getLastestMove(self):
         if self.numberOfLastMove > 0 and len(self.last_moves) > 0:
@@ -452,7 +450,7 @@ class Board:
                 self.squares[row][col] = Square(row, col)
 
     def _add_pieces(self, color):
-        row_pawn, row_other = (6, 7) if color == 'white' else (1, 0)
+        row_pawn, row_other = (6, 7) if color == WHITE_PIECE else (1, 0)
 
         # pawns
         for col in range(COLS):

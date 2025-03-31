@@ -13,7 +13,7 @@ from piece import *
 class Game:
 
     def __init__(self):
-        self.next_player = 'white'
+        self.next_player = WHITE_PLAYER
         self.hovered_sqr = None
         self.board = Board()
         self.dragger = Dragger()
@@ -142,7 +142,7 @@ class Game:
             pygame.draw.rect(screen, WHITE, box_rect, 5, border_radius=25)  
 
             # Hiển thị text
-            title_text = self.config.start_menu_font.render("Select Mode", True, WHITE)
+            title_text = self.config.start_menu_font.render(SELECT_MODE, True, WHITE)
             title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
             screen.blit(title_text, title_rect)
 
@@ -161,7 +161,7 @@ class Game:
 
                 if button_rect.collidepoint(mouse_x, mouse_y):
                     if self.last_hover_button != text:  
-                        if self.sound: self.play_sound("hover")
+                        if self.sound: self.play_sound(HOVER)
                         self.last_hover_button = text
                 
                     button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.start_menu_font, hover=True)
@@ -179,24 +179,24 @@ class Game:
                     sys.exit()
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.sound: self.play_sound("click")
+                    if self.sound: self.play_sound(CLICK)
                     for text, button_rect in button_rects.items():
                         if button_rect.collidepoint(event.pos):
                             if text == "PVP":
-                                return PVP
+                                self.display_pvp_game(screen)
                             elif text == "AI":
-                                return AI
+                                self.display_ai_game(screen)
                             elif text == "Quit":
                                 self.running = False
                                 pygame.quit()
                                 sys.exit()
-                                return QUIT
                             self.menu = False  
                     if self.sound_rect.collidepoint(event.pos):
                         if self.sound: self.sound = False
                         else: self.sound = True
             
     def display_pvp_game(self, screen):
+        self.reset()
         while self.running:
             if self.sound: self.pause_sound()
             # show methods
@@ -312,7 +312,7 @@ class Game:
                                 self.board.squares[move.enpassant_captured_piece_row][move.enpassant_captured_piece_col].piece = None
                             
                             # sounds
-                            check_sound = "capture" if captured else "move"
+                            check_sound = CAPTURE if captured else MOVE
                             if self.sound: self.play_sound(check_sound)
                             # show methods
                             self.show_bg(screen)
@@ -325,7 +325,7 @@ class Game:
                                 
                             # check is_checkmate
                             if self.is_checkmate():
-                                winner = WHITE_WIN if self.next_player == "white" else BLACK_WIN
+                                winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
                                 self.paused = True
                                 self.display_paused_game(screen, winner)
                                 
@@ -380,6 +380,7 @@ class Game:
             pygame.display.update()
             
     def display_ai_game(self, screen):
+        self.reset()
         while self.running:
             if self.sound: self.pause_sound()
             # show methods
@@ -396,7 +397,7 @@ class Game:
                 self.dragger.update_blit(screen)
                 
             # ai move
-            if self.next_player == "black":
+            if self.next_player == BLACK_PLAYER:
                 self.ai_move(screen)
 
             else:
@@ -497,7 +498,7 @@ class Game:
                                 self.board.move(self.dragger.piece, move)
 
                                 # sounds
-                                check_sound = "capture" if captured else "move"
+                                check_sound = CAPTURE if captured else MOVE
                                 if self.sound: self.play_sound(check_sound)
                                 # show methods
                                 self.show_bg(screen)
@@ -505,7 +506,7 @@ class Game:
                                 self.show_pieces(screen)
                                 # check is_checkmate
                                 if self.is_checkmate():
-                                    winner = WHITE_WIN if self.next_player == "white" else BLACK_WIN
+                                    winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
                                     self.paused = True
                                     self.display_paused_game(screen, winner)
                                 # next turn
@@ -545,25 +546,25 @@ class Game:
                 pygame.display.update()
 
     def display_paused_game(self, screen, type=PAUSED_GAME):
-        while True:
+        while self.paused:
             if type == PAUSED_GAME:
                 # Hiển thị chữ "PAUSE"
-                pause_text = self.config.paused_font.render("PAUSED", True, (200, 200, 200))
+                pause_text = self.config.paused_font.render(PAUSED_TEXT, True, (200, 200, 200))
                 pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
                 screen.blit(pause_text, pause_rect)
             elif type == WHITE_WIN:
                 # Hiển thị chữ "WHITE WIN"
-                pause_text = self.config.paused_font.render("WHITE WIN", True, WHITE)
+                pause_text = self.config.paused_font.render(WHITE_WIN_TEXT, True, WHITE)
                 pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
                 screen.blit(pause_text, pause_rect)
             elif type == BLACK_WIN:
                 # Hiển thị chữ "BLACK WIN"
-                pause_text = self.config.paused_font.render("BLACK WIN", True, BLACK)
+                pause_text = self.config.paused_font.render(BLACK_WIN_TEXT, True, BLACK)
                 pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
                 screen.blit(pause_text, pause_rect)
             elif type == DRAW:
                 # Hiển thị chữ "DRAW"
-                pause_text = self.config.paused_font.render("DRAW", True, BLACK)
+                pause_text = self.config.paused_font.render(DRAW_TEXT, True, BLACK)
                 pause_rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
                 screen.blit(pause_text, pause_rect)
 
@@ -590,7 +591,7 @@ class Game:
                         button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.paused_options_font, False)
                 if button_rect.collidepoint(mouse_x, mouse_y):
                     if self.last_hover_button != text: 
-                        if self.sound: self.play_sound("hover")
+                        if self.sound: self.play_sound(HOVER)
                         self.last_hover_button = text
                     button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.paused_options_font, True)
                 else: 
@@ -603,13 +604,14 @@ class Game:
             # Xử lý sự kiện
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.sound: self.play_sound("click")
+                    if self.sound: self.play_sound(CLICK)
                     for text, button_rect in button_rects.items():
                         if button_rect.collidepoint(event.pos):
                             if text == "Continue":
                                 if type == PAUSED_GAME:
                                     self.paused = False
                             elif text == "Restart":
+                                self.paused = False
                                 self.reset()
                             elif text == "Quit":
                                 self.__init__()
@@ -647,7 +649,7 @@ class Game:
                 button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.start_menu_font, hover=False)
                 if button_rect.collidepoint(mouse_x, mouse_y):
                     if self.last_hover_button != text:  
-                        if self.sound: self.play_sound("hover")
+                        if self.sound: self.play_sound(HOVER)
                         self.last_hover_button = text
                 
                     button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.start_menu_font, hover=True)
@@ -661,7 +663,7 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.sound:
-                        self.play_sound("click")
+                        self.play_sound(CLICK)
                     for option, rect in option_rects.items():
                         if rect.collidepoint(event.pos):
                             if option == "Queen":
@@ -680,7 +682,7 @@ class Game:
     # other methods
 
     def next_turn(self):
-        self.next_player = 'white' if self.next_player == 'black' else 'black'
+        self.next_player = WHITE_PLAYER if self.next_player == BLACK_PLAYER else BLACK_PLAYER
 
     def set_hover(self, row, col):
         self.hovered_sqr = self.board.squares[row][col]
@@ -689,13 +691,13 @@ class Game:
         self.config.change_theme()
 
     def play_sound(self, event_type):
-        if event_type == "capture":
+        if event_type == CAPTURE:
             self.config.capture_sound.play()
-        elif event_type == "move":
+        elif event_type == MOVE:
             self.config.move_sound.play()
-        elif event_type == "click":
+        elif event_type == CLICK:
             self.config.click_sound.play()
-        elif event_type == "hover":
+        elif event_type == HOVER:
             self.config.hover_sound.play()
             
     def play_background_sound(self):
@@ -757,7 +759,7 @@ class Game:
         value = 0
         center_squares = {(3, 3), (3, 4), (4, 3), (4, 4)}  # Trung tâm bàn cờ
         piece_square_table = {
-            "pawn": [
+            PAWN: [
                 0, 1, 2, 4, 5, 4, 2, 1,
                 0, 1, 2, 3, 4, 3, 2, 1,
                 0, 0, 1, 2, 3, 2, 1, 0,
@@ -767,7 +769,7 @@ class Game:
                 0, 1, 2, 3, 4, 3, 2, 1,
                 0, 1, 2, 4, 5, 4, 2, 1
             ],
-            "knight": [
+            KNIGHT: [
                 -5, -3, 0, 0, 0, 0, -3, -5,
                 -3, 0, 3, 4, 4, 3, 0, -3,
                 0, 3, 5, 6, 6, 5, 3, 0,
@@ -777,7 +779,7 @@ class Game:
                 -3, 0, 3, 4, 4, 3, 0, -3,
                 -5, -3, 0, 0, 0, 0, -3, -5
             ],
-            "bishop": [
+            BISHOP: [
                 -2, -1, 0, 0, 0, 0, -1, -2,
                 -1, 2, 3, 3, 3, 3, 2, -1,
                 0, 3, 4, 5, 5, 4, 3, 0,
@@ -787,7 +789,7 @@ class Game:
                 -1, 2, 3, 3, 3, 3, 2, -1,
                 -2, -1, 0, 0, 0, 0, -1, -2
             ],
-            "rook": [
+            ROOK: [
                 0, 0, 1, 2, 2, 1, 0, 0,
                 -1, 0, 0, 0, 0, 0, 0, -1,
                 -1, 0, 0, 0, 0, 0, 0, -1,
@@ -797,7 +799,7 @@ class Game:
                 1, 2, 2, 2, 2, 2, 2, 1,
                 0, 0, 1, 2, 2, 1, 0, 0
             ],
-            "queen": [
+            QUEEN: [
                 -2, -1, 0, 1, 1, 0, -1, -2,
                 -1, 0, 1, 1, 1, 1, 0, -1,
                 0, 1, 1, 1, 1, 1, 1, 0,
@@ -807,7 +809,7 @@ class Game:
                 -1, 0, 1, 1, 1, 1, 0, -1,
                 -2, -1, 0, 1, 1, 0, -1, -2
             ],
-            "king": [
+            KING: [
                 5, 5, 5, -5, -5, 5, 5, 5,
                 3, 3, 3, -5, -5, 3, 3, 3,
                 1, 1, 0, -5, -5, 0, 1, 1,
@@ -826,7 +828,7 @@ class Game:
                     base_value = piece.value
                     position_value = piece_square_table.get(piece.name, [0] * 64)[row * 8 + col] * 0.2  # Giảm trọng số vị trí
                     center_bonus = 2 if (row, col) in center_squares else 0
-                    value += base_value + position_value + center_bonus if piece.color == "white" else - (base_value + position_value + center_bonus)
+                    value += base_value + position_value + center_bonus if piece.color == WHITE_PIECE else - (base_value + position_value + center_bonus)
         return value
 
     def alpha_beta(self, depth, alpha, beta, maximizing_player):
@@ -836,7 +838,7 @@ class Game:
         if depth == 0 or self.is_checkmate():
             return self.evaluate_board()
         
-        moves = self.get_all_moves("black" if maximizing_player else "white")
+        moves = self.get_all_moves(BLACK_PLAYER if maximizing_player else WHITE_PLAYER)
         
         # Ưu tiên nước đi ăn quân
         moves.sort(key=lambda x: (x[1].final.piece.value if x[1].final.piece else 0), reverse=True)
@@ -888,7 +890,7 @@ class Game:
         alpha = float('-inf')
         beta = float('inf')
         
-        moves = self.get_all_moves("black")
+        moves = self.get_all_moves(BLACK_PLAYER)
         moves.sort(key=lambda x: x[1].final.piece.value if x[1].final.piece else 0, reverse=True)  # Ưu tiên ăn quân
         
         for piece, move in moves:
