@@ -56,7 +56,10 @@ class Board:
                     rook = piece.left_rook
                 else:
                     rook = piece.right_rook
-                self.move(rook, rook.moves[-1])
+                if rook.moves:  # Kiểm tra nếu danh sách moves không rỗng
+                    self.move(rook, rook.moves[-1])
+                else:
+                    print("No moves available for the rook.")
 
         # move
         piece.moved +=1

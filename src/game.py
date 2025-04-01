@@ -201,7 +201,6 @@ class Game:
                         else: self.sound = True
             
     def display_pvp_game(self, screen):
-        self.reset()
         while self.running:
             if self.sound: self.pause_sound()
             # show methods
@@ -331,20 +330,22 @@ class Game:
                             if len(check_promotion) > 0:
                                 self.display_promotion(piece, final, screen)
                                 
+                            c = 0
                             # check is_checkmate
                             if self.is_checkmate():
                                 winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
                                 self.paused = True
-                                self.display_paused_game(screen, winner)
+                                c = self.display_paused_game(screen, winner)
                                 
                             # check draw
                             if self.is_draw():
                                 winner = DRAW
                                 self.paused = True
-                                self.display_paused_game(screen, winner)
+                                c = self.display_paused_game(screen, winner)
                                 
                             # next turn
-                            self.next_turn()
+                            if c != RESTART:
+                                self.next_turn()
                         # for row in range(ROWS):
                         #     for col in range(COLS):
                         #         if self.board.squares[row][col].has_piece():
@@ -388,7 +389,6 @@ class Game:
             pygame.display.update()
             
     def display_ai_game(self, screen):
-        self.reset()
         while self.running:
             if self.sound: self.pause_sound()
             # show methods
@@ -407,6 +407,10 @@ class Game:
             # ai move
             if self.next_player == BLACK_PLAYER:
                 self.ai.ai_move(screen)
+            if self.is_checkmate():
+                winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
+                self.paused = True
+                self.display_paused_game(screen, winner)
 
             else:
                 for event in pygame.event.get():
@@ -516,12 +520,14 @@ class Game:
                                 self.show_last_move(screen)
                                 self.show_pieces(screen)
                                 # check is_checkmate
+                                c = 0
                                 if self.is_checkmate():
                                     winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
                                     self.paused = True
-                                    self.display_paused_game(screen, winner)
+                                    c = self.display_paused_game(screen, winner)
                                 # next turn
-                                self.next_turn()
+                                if c != RESTART:
+                                    self.next_turn()
                             # for row in range(ROWS):
                             #     for col in range(COLS):
                             #         if self.board.squares[row][col].has_piece():
@@ -624,6 +630,7 @@ class Game:
                             elif text == "Restart":
                                 self.paused = False
                                 self.reset()
+                                return RESTART
                             elif text == "Quit":
                                 self.__init__()
                                 self.play_background_sound()
@@ -724,7 +731,25 @@ class Game:
         self.config.background_video.play(screen)
 
     def reset(self):
-        self.__init__()
+        self.next_player = WHITE_PLAYER
+        self.hovered_sqr = None
+        self.board = Board()
+        self.dragger = Dragger()
+        self.config = Config()
+        self.paused = False
+        self.running = True
+        self.sound = True
+        self.sound_rect = pygame.Rect(SOUND_RECT)
+        # theo dõi nút đang được hover
+        self.last_hover_button = None
+        self.hasCastled = {WHITE_PIECE: False, BLACK_PIECE: False}
+        
+        # fifty-move rule
+        self.count_fifty_move_rule = 0
+        
+        # ai
+        self.ai = AIEngine(self.board, self)  # Khởi tạo AIEngine
+
         
     def back(self):
         move = self.board.getLastestMove()
