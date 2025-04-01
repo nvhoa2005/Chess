@@ -9,6 +9,7 @@ from config import Config
 from square import Square
 from move import Move
 from piece import *
+from ai_engine import AIEngine
 
 class Game:
 
@@ -25,9 +26,13 @@ class Game:
         self.sound_rect = pygame.Rect(SOUND_RECT)
         # theo dõi nút đang được hover
         self.last_hover_button = None
+        self.hasCastled = {WHITE_PIECE: False, BLACK_PIECE: False}
         
         # fifty-move rule
         self.count_fifty_move_rule = 0
+        
+        # ai
+        self.ai = AIEngine(self.board, self)  # Khởi tạo AIEngine
 
     # blit methods
     def show_bg(self, surface):
@@ -308,6 +313,9 @@ class Game:
                             
                             check_promotion = list()
                             self.board.move(self.dragger.piece, move, promotion=check_promotion)
+                            if isinstance(self.dragger.piece, King) and abs(initial.col - final.col) > 1:
+                                self.hasCastled[self.dragger.piece] = True  # Đánh dấu rằng quân Vua đã nhập thành
+                                
                             if move.enpassant_captured_piece_row is not None:
                                 self.board.squares[move.enpassant_captured_piece_row][move.enpassant_captured_piece_col].piece = None
                             
@@ -398,7 +406,7 @@ class Game:
                 
             # ai move
             if self.next_player == BLACK_PLAYER:
-                self.ai_move(screen)
+                self.ai.ai_move(screen)
 
             else:
                 for event in pygame.event.get():
@@ -496,6 +504,9 @@ class Game:
                                 # normal capture
                                 captured = self.board.squares[released_row][released_col].has_piece()
                                 self.board.move(self.dragger.piece, move)
+                                self.board.update_castling_rights(piece.color, piece, initial, final)
+                                if isinstance(self.dragger.piece, King) and abs(initial.col - final.col) > 1:
+                                    self.hasCastled[self.dragger.piece] = True  # Đánh dấu rằng quân Vua đã nhập thành
 
                                 # sounds
                                 check_sound = CAPTURE if captured else MOVE
@@ -748,123 +759,6 @@ class Game:
                         (0, 0, rect.width, rect.height), border_radius=border_radius)
         # Vẽ Surface lên màn hình chính
         screen.blit(transparent_surface, (rect.x, rect.y))
-        
-        
-    # =====================AI=======================
-        
-    def evaluate_board(self):
-        """
-        Đánh giá bàn cờ dựa trên giá trị quân cờ, vị trí và chiến thuật.
-        """
-        value = 0
-        center_squares = {(3, 3), (3, 4), (4, 3), (4, 4)}  # Trung tâm bàn cờ
-        piece_square_table = {
-            PAWN: [
-                0, 1, 2, 4, 5, 4, 2, 1,
-                0, 1, 2, 3, 4, 3, 2, 1,
-                0, 0, 1, 2, 3, 2, 1, 0,
-                0, 0, 0, 1, 2, 1, 0, 0,
-                0, 0, 0, 1, 2, 1, 0, 0,
-                0, 0, 1, 2, 3, 2, 1, 0,
-                0, 1, 2, 3, 4, 3, 2, 1,
-                0, 1, 2, 4, 5, 4, 2, 1
-            ],
-            KNIGHT: [
-                -5, -3, 0, 0, 0, 0, -3, -5,
-                -3, 0, 3, 4, 4, 3, 0, -3,
-                0, 3, 5, 6, 6, 5, 3, 0,
-                0, 4, 6, 7, 7, 6, 4, 0,
-                0, 4, 6, 7, 7, 6, 4, 0,
-                0, 3, 5, 6, 6, 5, 3, 0,
-                -3, 0, 3, 4, 4, 3, 0, -3,
-                -5, -3, 0, 0, 0, 0, -3, -5
-            ],
-            BISHOP: [
-                -2, -1, 0, 0, 0, 0, -1, -2,
-                -1, 2, 3, 3, 3, 3, 2, -1,
-                0, 3, 4, 5, 5, 4, 3, 0,
-                0, 3, 5, 6, 6, 5, 3, 0,
-                0, 3, 5, 6, 6, 5, 3, 0,
-                0, 3, 4, 5, 5, 4, 3, 0,
-                -1, 2, 3, 3, 3, 3, 2, -1,
-                -2, -1, 0, 0, 0, 0, -1, -2
-            ],
-            ROOK: [
-                0, 0, 1, 2, 2, 1, 0, 0,
-                -1, 0, 0, 0, 0, 0, 0, -1,
-                -1, 0, 0, 0, 0, 0, 0, -1,
-                -1, 0, 0, 0, 0, 0, 0, -1,
-                -1, 0, 0, 0, 0, 0, 0, -1,
-                -1, 0, 0, 0, 0, 0, 0, -1,
-                1, 2, 2, 2, 2, 2, 2, 1,
-                0, 0, 1, 2, 2, 1, 0, 0
-            ],
-            QUEEN: [
-                -2, -1, 0, 1, 1, 0, -1, -2,
-                -1, 0, 1, 1, 1, 1, 0, -1,
-                0, 1, 1, 1, 1, 1, 1, 0,
-                1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1,
-                0, 1, 1, 1, 1, 1, 1, 0,
-                -1, 0, 1, 1, 1, 1, 0, -1,
-                -2, -1, 0, 1, 1, 0, -1, -2
-            ],
-            KING: [
-                5, 5, 5, -5, -5, 5, 5, 5,
-                3, 3, 3, -5, -5, 3, 3, 3,
-                1, 1, 0, -5, -5, 0, 1, 1,
-                0, 0, -5, -10, -10, -5, 0, 0,
-                0, 0, -5, -10, -10, -5, 0, 0,
-                1, 1, 0, -5, -5, 0, 1, 1,
-                3, 3, 3, -5, -5, 3, 3, 3,
-                5, 5, 5, -5, -5, 5, 5, 5
-            ]
-        }
-        
-        for row in range(ROWS):
-            for col in range(COLS):
-                if self.board.squares[row][col].has_piece():
-                    piece = self.board.squares[row][col].piece
-                    base_value = piece.value
-                    position_value = piece_square_table.get(piece.name, [0] * 64)[row * 8 + col] * 0.2  # Giảm trọng số vị trí
-                    center_bonus = 2 if (row, col) in center_squares else 0
-                    value += base_value + position_value + center_bonus if piece.color == WHITE_PIECE else - (base_value + position_value + center_bonus)
-        return value
-
-    def alpha_beta(self, depth, alpha, beta, maximizing_player):
-        """
-        Cải tiến Alpha-Beta Pruning để tối ưu AI.
-        """
-        if depth == 0 or self.is_checkmate():
-            return self.evaluate_board()
-        
-        moves = self.get_all_moves(BLACK_PLAYER if maximizing_player else WHITE_PLAYER)
-        
-        # Ưu tiên nước đi ăn quân
-        moves.sort(key=lambda x: (x[1].final.piece.value if x[1].final.piece else 0), reverse=True)
-        
-        if maximizing_player:
-            max_eval = float('-inf')
-            for piece, move in moves:
-                self.board.move(piece, move)
-                eval = self.alpha_beta(depth - 1, alpha, beta, False)
-                self.board.undo_move(move)
-                max_eval = max(max_eval, eval)
-                alpha = max(alpha, eval)
-                if beta <= alpha:
-                    break
-            return max_eval
-        else:
-            min_eval = float('inf')
-            for piece, move in moves:
-                self.board.move(piece, move)
-                eval = self.alpha_beta(depth - 1, alpha, beta, True)
-                self.board.undo_move(move)
-                min_eval = min(min_eval, eval)
-                beta = min(beta, eval)
-                if beta <= alpha:
-                    break
-            return min_eval
 
     def get_all_moves(self, color):
         """
@@ -881,51 +775,6 @@ class Game:
                             moves.append((piece, move))
         return moves
 
-    def best_move(self, depth):
-        """
-        Cải thiện chọn nước đi tốt nhất dựa trên Alpha-Beta Pruning.
-        """
-        best_moves = []
-        best_value = float('-inf')
-        alpha = float('-inf')
-        beta = float('inf')
-        
-        moves = self.get_all_moves(BLACK_PLAYER)
-        moves.sort(key=lambda x: x[1].final.piece.value if x[1].final.piece else 0, reverse=True)  # Ưu tiên ăn quân
-        
-        for piece, move in moves:
-            self.board.move(piece, move)
-            move_value = self.alpha_beta(depth - 1, alpha, beta, False)
-            self.board.undo_move(move)
-            
-            if move_value > best_value:
-                best_value = move_value
-                best_moves = [(piece, move)]
-            elif move_value == best_value:
-                best_moves.append((piece, move))
-        
-        return random.choice(best_moves) if best_moves else None
-
-    def ai_move(self, screen):
-        """
-        Máy tính chọn nước đi tốt nhất hoặc kết thúc game nếu không có nước đi hợp lệ.
-        """
-        best_move = self.best_move(2)  # Độ sâu 3
-        print("pass")
-        if best_move:
-            piece, move = best_move
-            self.board.move(piece, move)
-            self.show_bg(screen)
-            self.show_last_move(screen)
-            self.show_pieces(screen)
-            self.next_turn()
-        else:
-            # Kiểm tra nếu AI bị chiếu hết hoặc hòa
-            if self.is_checkmate():
-                print("Checkmate! Người chơi thắng!")
-            else:
-                print("AI không thể di chuyển, ván cờ kết thúc.")
-         
     # chiếu hết
     def is_checkmate(self):
         for row in range(ROWS):

@@ -27,6 +27,11 @@ CONTINUE = 3
 RESTART = 4
 QUIT = 0
 
+# status
+RUNNING = 2
+WHITEWON = 4
+BLACKWON = 5
+
 # theme
 GREEN = (234, 235, 200), (119, 154, 88), (244, 247, 116), (172, 195, 51), '#C86464', '#C84646'
 BROWN = (235, 209, 166), (165, 117, 80), (245, 234, 100), (209, 185, 59), '#C86464', '#C84646'
@@ -40,12 +45,25 @@ PAUSED_GAME = 300
 DRAW = 150
 
 # Piece
-KING = "king"
-QUEEN = "queen"
-ROOK = "rook"
-BISHOP = "bishop"
-KNIGHT = "knight"
-PAWN = "pawn"
+KING_NAME = "king"
+QUEEN_NAME = "queen"
+ROOK_NAME = "rook"
+BISHOP_NAME = "bishop"
+KNIGHT_NAME = "knight"
+PAWN_NAME = "pawn"
+
+WHITE_KING = "white_king"
+BLACK_KING = "black_king"
+WHITE_QUEEN = "white_queen"
+BLACK_QUEEN = "black_queen"
+WHITE_ROOK = "white_rook"
+BLACK_ROOK = "black_rook"
+WHITE_BISHOP = "white_bishop"
+BLACK_BISHOP = "black_bishop"
+WHITE_KNIGHT = "white_knight"
+BLACK_KNIGHT = "black_knight"
+WHITE_PAWN = "white_pawn"
+BLACK_PAWN = "black_pawn"
 
 # Piece color
 WHITE_PIECE = "white"
@@ -73,3 +91,21 @@ SELECT_MODE = "Select mode"
 HOVER = "hover"
 CLICK = "click"
 
+(
+    EMPTY,
+    PAWN,
+    KNIGHT,
+    BISHOP,
+    ROOK,
+    QUEEN,
+    KING,
+    HAWK,
+    ELEPHANT,
+    BPAWN,
+    ASEAN_WBISHOP,
+    ASEAN_BBISHOP,
+    ASEAN_QUEEN,
+) = range(13)
+
+# Castling values
+W_OO, W_OOO, B_OO, B_OOO = (2**i for i in range(4))

@@ -13,6 +13,8 @@ class Board:
         self._create()
         self._add_pieces(WHITE_PIECE)
         self._add_pieces(BLACK_PIECE)
+        self.castling = {WHITE_PIECE: 0b11, BLACK_PIECE: 0b11}  # Quyền nhập thành (both kingside & queenside)
+        self.hasCastled = {WHITE_PIECE: False, BLACK_PIECE: False}  # Trạng thái nhập thành của cả hai bên
 
     def getLastestMove(self):
         if self.numberOfLastMove > 0 and len(self.last_moves) > 0:
@@ -47,7 +49,7 @@ class Board:
             
         # king castling
         if isinstance(piece, King):
-            if not piece.moved and self.castling(initial, final) and not testing:
+            if not piece.moved and self.check_castling(initial, final) and not testing:
                 diff = final.col - initial.col
                 rook = None
                 if diff < 0:
@@ -83,7 +85,7 @@ class Board:
         if final.row == 0 or final.row == 7:
             return True
 
-    def castling(self, initial, final):
+    def check_castling(self, initial, final):
         return abs(initial.col - final.col) == 2
 
     def in_check(self, piece, move):
@@ -473,6 +475,55 @@ class Board:
 
         # king
         self.squares[row_other][4] = Square(row_other, 4, King(color))
+        
+    def findWhiteKing(self):
+        for row in range(ROWS):
+            for col in range(COLS):
+                square = self.board.squares[row][col]
+                if square.has_piece():
+                    piece = square.piece
+                    if isinstance(piece, King) and piece.color == WHITE_PIECE:
+                        return square
+                    
+    def findBlackKing(self):
+        for row in ROWS:
+            for col in COLS:
+                square = self.board.squares[row][col]
+                if square.has_piece():
+                    piece = square.piece
+                    if isinstance(piece, King) and piece.color == BLACK_PIECE:
+                        return square
+                    
+    def update_castling_rights(self, color, piece, initial, final):
+        """Cập nhật quyền nhập thành khi quân cờ di chuyển (đặc biệt là Vua và Xe)"""
+        if isinstance(piece, King):
+            # Nếu quân Vua di chuyển, loại bỏ quyền nhập thành
+            if color == WHITE_PIECE:
+                self.castling[WHITE_PIECE] = 0  # Loại bỏ quyền nhập thành của quân trắng
+            else:
+                self.castling[BLACK_PIECE] = 0  # Loại bỏ quyền nhập thành của quân đen
+        elif isinstance(piece, Rook):
+            # Nếu quân Xe di chuyển, loại bỏ quyền nhập thành tương ứng
+            if color == WHITE_PIECE:
+                if initial.col == 0:  # Xe bên trái
+                    self.castling[WHITE_PIECE] &= 0b10  # Loại bỏ quyền nhập thành queenside
+                elif initial.col == 7:  # Xe bên phải
+                    self.castling[WHITE_PIECE] &= 0b01  # Loại bỏ quyền nhập thành kingside
+            else:
+                if initial.col == 0:  # Xe bên trái
+                    self.castling[BLACK_PIECE] &= 0b10  # Loại bỏ quyền nhập thành queenside
+                elif initial.col == 7:  # Xe bên phải
+                    self.castling[BLACK_PIECE] &= 0b01  # Loại bỏ quyền nhập thành kingside
+                    
+    def can_castle(self, color, kingside=True):
+        """Kiểm tra quyền nhập thành của quân Vua cho một bên (quân trắng hoặc đen)"""
+        kside = W_OO if color == WHITE_PIECE else B_OO
+        qside = W_OOO if color == WHITE_PIECE else B_OOO
+
+        if kingside:
+            return bool(self.castling[color] & kside)
+        else:
+            return bool(self.castling[color] & qside)
         
         
     # ============================AI==============================
