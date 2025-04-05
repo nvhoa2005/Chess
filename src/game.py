@@ -15,6 +15,7 @@ class Game:
 
     def __init__(self):
         self.next_player = WHITE_PLAYER
+        self.player_color = None # màu của người chơi
         self.hovered_sqr = None
         self.board = Board()
         self.dragger = Dragger()
@@ -33,6 +34,7 @@ class Game:
         
         # ai
         self.ai = AIEngine(self.board, self)  # Khởi tạo AIEngine
+        self.ai_color = None
 
     # blit methods
     def show_bg(self, surface):
@@ -199,6 +201,53 @@ class Game:
                     if self.sound_rect.collidepoint(event.pos):
                         if self.sound: self.sound = False
                         else: self.sound = True
+            
+    def display_choose_piece(self, screen):
+        selecting = True
+        while selecting:
+            # Vẽ khung nền cho text 
+            box_width, box_height = 500, 350
+            box_rect = pygame.Rect(WIDTH // 2 - box_width // 2, HEIGHT // 2 - 150, box_width, box_height)
+            self.draw_transparent_rect(screen, (50, 50, 50), box_rect, 180, border_radius=25) 
+            pygame.draw.rect(screen, WHITE, box_rect, 5, border_radius=25)  
+
+            # Lấy vị trí chuột
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            
+            promotion_options = [("BLACK", -20), ("WHITE", 80)]
+            option_rects = {}
+
+            for text, y_offset in promotion_options:
+                button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.start_menu_font, hover=False)
+                if button_rect.collidepoint(mouse_x, mouse_y):
+                    if self.last_hover_button != text:  
+                        if self.sound: self.play_sound(HOVER)
+                        self.last_hover_button = text
+                
+                    button_rect = self.draw_button(screen, text, (WIDTH // 2, HEIGHT // 2 + y_offset), 280, 80, self.config.start_menu_font, hover=True)
+                elif self.last_hover_button == text: 
+                    self.last_hover_button = None
+
+                option_rects[text] = button_rect
+
+            pygame.display.update()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.sound:
+                        self.play_sound(CLICK)
+                    for option, rect in option_rects.items():
+                        if rect.collidepoint(event.pos):
+                            if option == "BLACK":
+                                self.ai_color = WHITE_PLAYER
+                                self.player_color = BLACK_PLAYER
+                            elif option == "WHITE":
+                                self.ai_color = BLACK_PLAYER
+                                self.player_color = WHITE_PLAYER
+                            selecting = False
+                elif event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
             
     def display_pvp_game(self, screen):
         while self.running:
@@ -395,6 +444,7 @@ class Game:
             pygame.display.update()
             
     def display_ai_game(self, screen):
+        self.display_choose_piece(screen)
         while self.running:
             if self.sound: self.pause_sound()
             # show methods
@@ -411,7 +461,7 @@ class Game:
                 self.dragger.update_blit(screen)
                 
             # ai move
-            if self.next_player == BLACK_PLAYER:
+            if self.next_player == self.ai_color:
                 self.ai.ai_move(screen)
             if self.is_checkmate():
                 winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
@@ -841,3 +891,13 @@ class Game:
     def is_draw(self):
         if self.count_fifty_move_rule >= 50:
             return True
+        n = len(self.board.last_moves)
+        if n >= 11:
+            if self.board.last_moves[n-10] == self.board.last_moves[n-6] and \
+                self.board.last_moves[n-6] == self.board.last_moves[n-2] and \
+                self.board.last_moves[n-9] == self.board.last_moves[n-5] and \
+                self.board.last_moves[n-5] == self.board.last_moves[n-1] and \
+                self.board.last_moves[n-8] == self.board.last_moves[n-4] and \
+                self.board.last_moves[n-7] == self.board.last_moves[n-3]:
+                return True
+        return False
