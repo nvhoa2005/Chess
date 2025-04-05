@@ -368,6 +368,12 @@ class Game:
                     if event.key == pygame.K_r:
                         self.reset()
                         
+                    if event.key == pygame.K_d:
+                        self.paused = True
+                        c = self.display_paused_game(screen, DRAW)
+                        if c != RESTART:
+                            self.next_turn()
+                        
                     # paused
                     if event.key == pygame.K_ESCAPE:
                         self.paused = not self.paused
@@ -507,7 +513,10 @@ class Game:
                             if self.board.valid_move(self.dragger.piece, move):
                                 # normal capture
                                 captured = self.board.squares[released_row][released_col].has_piece()
-                                self.board.move(self.dragger.piece, move)
+                                
+                                check_promotion = list()
+                                self.board.move(self.dragger.piece, move, promotion=check_promotion)
+                                
                                 self.board.update_castling_rights(piece.color, piece, initial, final)
                                 if isinstance(self.dragger.piece, King) and abs(initial.col - final.col) > 1:
                                     self.hasCastled[self.dragger.piece] = True  # Đánh dấu rằng quân Vua đã nhập thành
@@ -519,12 +528,24 @@ class Game:
                                 self.show_bg(screen)
                                 self.show_last_move(screen)
                                 self.show_pieces(screen)
-                                # check is_checkmate
+                                
+                                # check promotion
+                                if len(check_promotion) > 0:
+                                    self.display_promotion(piece, final, screen)
+                                
                                 c = 0
+                                # check is_checkmate
                                 if self.is_checkmate():
                                     winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
                                     self.paused = True
                                     c = self.display_paused_game(screen, winner)
+                                    
+                                # check draw
+                                if self.is_draw():
+                                    winner = DRAW
+                                    self.paused = True
+                                    c = self.display_paused_game(screen, winner)
+                                    
                                 # next turn
                                 if c != RESTART:
                                     self.next_turn()
@@ -553,6 +574,12 @@ class Game:
                         # paused
                         if event.key == pygame.K_ESCAPE:
                             self.paused = not self.paused
+                            
+                        if event.key == pygame.K_d:
+                            self.paused = True
+                            c = self.display_paused_game(screen, DRAW)
+                            if c != RESTART:
+                                self.next_turn()
 
                     # quit application
                     elif event.type == pygame.QUIT:
@@ -812,5 +839,5 @@ class Game:
         return True
     
     def is_draw(self):
-        if self.count_fifty_move_rule == 50:
+        if self.count_fifty_move_rule >= 50:
             return True
