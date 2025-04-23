@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessAIProject\\ChessLib\\ChessLib.csproj": {}
+    "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessPython\\ChessLib\\ChessLib.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessAIProject\\ChessLib\\ChessLib.csproj": {
+    "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessPython\\ChessLib\\ChessLib.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessAIProject\\ChessLib\\ChessLib.csproj",
+        "projectUniqueName": "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessPython\\ChessLib\\ChessLib.csproj",
         "projectName": "ChessLib",
-        "projectPath": "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessAIProject\\ChessLib\\ChessLib.csproj",
+        "projectPath": "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessPython\\ChessLib\\ChessLib.csproj",
         "packagesPath": "C:\\Users\\Hoa\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessAIProject\\ChessLib\\obj\\",
+        "outputPath": "C:\\Users\\Hoa\\OneDrive\\Desktop\\ChessPython\\ChessLib\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Hoa\\AppData\\Roaming\\NuGet\\NuGet.Config",
