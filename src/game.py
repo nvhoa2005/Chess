@@ -10,6 +10,17 @@ from square import Square
 from move import Move
 from piece import *
 from ai_engine import AIEngine
+from pgn import PGNBuilder
+from convert_move import convert_cs_move_to_py_move
+
+import clr
+
+import chess
+import chess.engine
+
+dll_path = os.path.join(os.path.dirname(__file__), "ChessLib2.dll")
+clr.AddReference(dll_path)
+from ChessLib import Search2, Board as CsBoard, Move as CsMove
 
 class Game:
 
@@ -35,6 +46,13 @@ class Game:
         # ai
         self.ai = AIEngine(self.board, self)  # Khởi tạo AIEngine
         self.ai_color = None
+        
+        self.engine = chess.engine.SimpleEngine.popen_uci(
+            "C:/Users/Hoa/Downloads/stockfish-windows-x86-64-avx2/stockfish/stockfish-windows-x86-64-avx2.exe"
+        )
+        
+        self.pgn = PGNBuilder()
+        
 
     # blit methods
     def show_bg(self, surface):
@@ -462,11 +480,91 @@ class Game:
                 
             # ai move
             if self.next_player == self.ai_color:
-                self.ai.ai_move(screen)
-            if self.is_checkmate():
-                winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
-                self.paused = True
-                self.display_paused_game(screen, winner)
+                # self.ai.ai_move(screen)
+                fen = None
+                if self.next_player == WHITE_PLAYER:
+                    fen = self.board.to_fen(next_player='w')
+                else:
+                    fen = self.board.to_fen(next_player='b')
+                print(fen)
+                board = CsBoard()
+                board.LoadPosition(fen)
+                searcher = Search2(board)
+                time = 1000
+                cs_move = searcher.getBestMove(time)
+                py_move = convert_cs_move_to_py_move(cs_move)
+                flag = cs_move.MoveFlag
+                initial_row = py_move.initial.row
+                initial_col = py_move.initial.col
+                initial_piece = self.board.squares[initial_row][initial_col].piece
+                final_row = py_move.final.row
+                final_col = py_move.final.col
+                final_piece = self.board.squares[final_row][final_col].piece
+                captured = final_piece
+                initial_ai_move = Square(initial_row, initial_col, initial_piece)
+                final_ai_move = Square(final_row, final_col, final_piece)
+                ai_move = None
+                if flag == 1: #enpassant
+                    last_move = self.board.getLastestMove()
+                    ai_move = Move(initial_ai_move, final_ai_move, enpassant_captured_piece_prev_row=last_move.initial.row, enpassant_captured_piece_prev_col=last_move.initial.col, enpassant_captured_piece_row=initial_row, enpassant_captured_piece_col=final_col)
+                else:
+                    ai_move = Move(initial_ai_move, final_ai_move)
+                self.board.move(initial_piece, ai_move)
+                
+                # promotion
+                if flag == 3:
+                    self.board.squares[final_row][final_col].piece = Queen(self.ai_color)
+                elif flag == 4:
+                    self.board.squares[final_row][final_col].piece = Knight(self.ai_color)
+                elif flag == 5:
+                    self.board.squares[final_row][final_col].piece = Rook(self.ai_color)
+                elif flag == 6:
+                    self.board.squares[final_row][final_col].piece = Bishop(self.ai_color)
+                
+                
+                if isinstance(initial_piece, King) and abs(initial_col - final_col) > 1:
+                    self.hasCastled[initial_piece] = True  # Đánh dấu rằng quân Vua đã nhập thành
+
+                # added
+                is_capture = captured
+                is_check = 0  # You need to implement this
+                is_checkmate = self.is_checkmate()
+                is_castling = isinstance(initial_piece, King) and abs(
+                    final_col - initial_col) == 2
+
+                self.pgn.add_move(
+                    ai_move,
+                    initial_piece,
+                    is_capture=is_capture,
+                    is_check=is_check,
+                    is_checkmate=is_checkmate,
+                    is_castling=is_castling
+                )
+                
+                # sounds
+                check_sound = CAPTURE if captured else MOVE
+                if self.sound: self.play_sound(check_sound)
+                # show methods
+                self.show_bg(screen)
+                self.show_last_move(screen)
+                self.show_pieces(screen)
+                
+                c = 0
+                # check is_checkmate
+                if self.is_checkmate():
+                    winner = WHITE_WIN if self.next_player == WHITE_PLAYER else BLACK_WIN
+                    self.paused = True
+                    c = self.display_paused_game(screen, winner)
+                    
+                # check draw
+                if self.is_draw():
+                    winner = DRAW
+                    self.paused = True
+                    c = self.display_paused_game(screen, winner)
+                    
+                # next turn
+                if c != RESTART:
+                    self.next_turn()
 
             else:
                 for event in pygame.event.get():
@@ -625,6 +723,10 @@ class Game:
                         if event.key == pygame.K_ESCAPE:
                             self.paused = not self.paused
                             
+                        if event.key == pygame.K_b:
+                            self.back()
+                            self.back()
+                            
                         if event.key == pygame.K_d:
                             self.paused = True
                             c = self.display_paused_game(screen, DRAW)
@@ -634,6 +736,7 @@ class Game:
                     # quit application
                     elif event.type == pygame.QUIT:
                         self.running = False
+                        self.engine.quit()
                         pygame.quit()
                         sys.exit()
                 

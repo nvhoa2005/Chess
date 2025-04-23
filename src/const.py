@@ -109,3 +109,26 @@ CLICK = "click"
 
 # Castling values
 W_OO, W_OOO, B_OO, B_OOO = (2**i for i in range(4))
+
+# Board
+BOARD_ROWS = {
+    "8" : 0,
+    "7" : 1,
+    "6" : 2,   
+    "5" : 3,
+    "4" : 4,
+    "3" : 5,
+    "2" : 6,
+    "1" : 7
+}
+
+BOARD_COLS = {
+    "a" : 0,
+    "b" : 1,
+    "c" : 2,
+    "d" : 3,
+    "e" : 4,
+    "f" : 5,
+    "g" : 6,
+    "h" : 7
+}

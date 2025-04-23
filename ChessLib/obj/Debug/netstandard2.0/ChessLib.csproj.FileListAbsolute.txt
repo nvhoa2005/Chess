@@ -1,0 +1,5 @@
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\netstandard2.0\ChessLib.csproj.AssemblyReference.cache
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\netstandard2.0\ChessLib.GeneratedMSBuildEditorConfig.editorconfig
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\netstandard2.0\ChessLib.AssemblyInfoInputs.cache
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\netstandard2.0\ChessLib.AssemblyInfo.cs
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\netstandard2.0\ChessLib.csproj.CoreCompileInputs.cache

@@ -1,0 +1,11 @@
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\bin\Debug\net9.0\ChessLib.deps.json
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\bin\Debug\net9.0\ChessLib.dll
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\bin\Debug\net9.0\ChessLib.pdb
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\net9.0\ChessLib.GeneratedMSBuildEditorConfig.editorconfig
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\net9.0\ChessLib.AssemblyInfoInputs.cache
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\net9.0\ChessLib.AssemblyInfo.cs
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\net9.0\ChessLib.csproj.CoreCompileInputs.cache
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\net9.0\ChessLib.dll
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\net9.0\refint\ChessLib.dll
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\net9.0\ChessLib.pdb
+D:\daihoc\pythonn\chessAI\csharp\ChessLib\obj\Debug\net9.0\ref\ChessLib.dll

@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <OutputType>Library</OutputType>
+    <!-- These two lines must be removed for compatibility -->
+    <!-- <ImplicitUsings>enable</ImplicitUsings> -->
+    <!-- <Nullable>enable</Nullable> -->
+  </PropertyGroup>
+
+</Project>

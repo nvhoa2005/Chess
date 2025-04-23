@@ -38,9 +38,12 @@ class Board:
         
         if move.enpassant_captured_piece_row is not None:
             move.captured_piece = self.squares[move.enpassant_captured_piece_row][move.enpassant_captured_piece_col].piece
+            self.squares[move.enpassant_captured_piece_row][move.enpassant_captured_piece_col].piece = None
 
         # console board move update
         self.squares[initial.row][initial.col].piece = None
+        # if isinstance(piece, Rook):
+        #     print(initial.row, initial.col, "----", final.row, final.col)
         self.squares[final.row][final.col].piece = piece
 
         if isinstance(piece, Pawn):
@@ -51,14 +54,23 @@ class Board:
         if isinstance(piece, King):
             if not piece.moved and self.check_castling(initial, final) and not testing:
                 diff = final.col - initial.col
-                rook = None
+                initR_p = None
+                mR = None
                 if diff < 0:
-                    rook = piece.left_rook
+                    initR_p = self.squares[initial.row][0].piece
+                    finalR_p = self.squares[initial.row][3].piece
+                    initR = Square(initial.row, 0, initR_p)
+                    finalR = Square(initial.row, 3, finalR_p)
+                    mR = Move(initR, finalR)
                 else:
-                    rook = piece.right_rook
-                self.calc_moves(rook, initial.row, initial.col)
-                if rook.moves:  # Kiểm tra nếu danh sách moves không rỗng
-                    self.move(rook, rook.moves[-1])
+                    initR_p = self.squares[initial.row][7].piece
+                    finalR_p = self.squares[initial.row][5].piece
+                    initR = Square(initial.row, 7, initR_p)
+                    finalR = Square(initial.row, 5, finalR_p)
+                    mR = Move(initR, finalR)
+                initR_p.add_move(mR)
+                if initR_p.moves:  # Kiểm tra nếu danh sách moves không rỗng
+                    self.move(initR_p, mR)
                 else:
                     print("No moves available for the rook.")
 
@@ -574,3 +586,64 @@ class Board:
         # Hoàn tác trạng thái di chuyển của quân cờ
         moved_piece.moved -=1
         self.delete_nearestMove()
+        
+    def to_fen(self, next_player='w', halfmove_clock=0, fullmove_number=1):
+        piece_map = {
+            'pawn': 'P',
+            'knight': 'N',
+            'bishop': 'B',
+            'rook': 'R',
+            'queen': 'Q',
+            'king': 'K'
+        }
+
+        rows = []
+        for row in self.squares:
+            fen_row = ''
+            empty = 0
+            for square in row:
+                piece = square.piece
+                if not piece:
+                    empty += 1
+                else:
+                    if empty:
+                        fen_row += str(empty)
+                        empty = 0
+                    symbol = piece_map.get(piece.name, '?')
+                    fen_row += symbol if piece.color == WHITE_PIECE else symbol.lower()
+            if empty:
+                fen_row += str(empty)
+            rows.append(fen_row)
+
+        board_part = '/'.join(rows)
+
+        # === Castling rights ===
+        castling = ''
+        if self.squares[7][4].piece and self.squares[7][4].piece.name == 'king' and not self.squares[7][4].piece.moved:
+            if self.squares[7][7].piece and self.squares[7][7].piece.name == 'rook' and not self.squares[7][7].piece.moved:
+                castling += 'K'
+            if self.squares[7][0].piece and self.squares[7][0].piece.name == 'rook' and not self.squares[7][0].piece.moved:
+                castling += 'Q'
+        if self.squares[0][4].piece and self.squares[0][4].piece.name == 'king' and not self.squares[0][4].piece.moved:
+            if self.squares[0][7].piece and self.squares[0][7].piece.name == 'rook' and not self.squares[0][7].piece.moved:
+                castling += 'k'
+            if self.squares[0][0].piece and self.squares[0][0].piece.name == 'rook' and not self.squares[0][0].piece.moved:
+                castling += 'q'
+        if not castling:
+            castling = '-'
+
+        # === En Passant Target ===
+        en_passant = '-'
+        last_move = self.getLastestMove() if hasattr(self, 'getLastestMove') else None
+        if last_move:
+            piece = last_move.initial.piece
+            if piece and piece.name == 'pawn':
+                start_row = last_move.initial.row
+                end_row = last_move.final.row
+                # Check if it was a 2-step pawn move
+                if abs(start_row - end_row) == 2:
+                    target_row = (start_row + end_row) // 2
+                    target_col = last_move.initial.col
+                    en_passant = Square.get_alphacol(target_col) + str(8 - target_row)
+
+        return f"{board_part} {next_player} {castling} {en_passant} {halfmove_clock} {fullmove_number}"
